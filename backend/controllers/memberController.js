@@ -31,7 +31,15 @@ export async function createMember(req, res){
     await member.save();
 
     // Directly send professional welcome/confirmation message
-    await sendWelcome(phone, { name, joinDate, expiryDate: expiry, timeSlot, paymentStatus: paymentStatus || 'pending' }).catch(err => console.error('Welcome send failed', err));
+    await sendWelcome(phone, { 
+      name, 
+      joinDate, 
+      expiryDate: expiry, 
+      timeSlot, 
+      paymentStatus: paymentStatus || 'pending',
+      amountReceived: amountReceived || 0,
+      address
+    }).catch(err => console.error('Welcome send failed', err));
 
     res.status(201).json({ member, messageSent: true });
   } catch(err){

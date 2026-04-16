@@ -92,7 +92,7 @@ function AddMember({ onNavigate }){
         setName(''); setPhone(''); setAddress(''); setCustomMessage(''); setAmountReceived('');
         setTimeout(() => {
           if (onNavigate) onNavigate('dashboard');
-        }, 3500);
+        }, 2000);
       } else {
         setMessage({ text: data.message || 'Operation failed', type: 'error' })
       }
@@ -229,8 +229,14 @@ function AddMember({ onNavigate }){
           </div>
 
           {message && (
-            <div className={`p-3 md:p-4 rounded-lg md:rounded-xl text-sm font-medium ${message.type === 'error' ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'}`}>
-              {message.text}
+            <div className={`relative overflow-hidden p-3 md:p-4 rounded-lg md:rounded-xl text-sm font-medium ${message.type === 'error' ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'}`}>
+              <div className="relative z-10">{message.text}</div>
+              {message.type === 'success' && (
+                <div 
+                  className="absolute bottom-0 left-0 h-1 bg-emerald-500" 
+                  style={{ width: '100%', transformOrigin: 'left', animation: 'shrinkBar 2s linear forwards' }} 
+                />
+              )}
             </div>
           )}
 
