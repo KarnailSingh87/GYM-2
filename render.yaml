@@ -14,7 +14,7 @@ services:
       - key: MONGO_URI
         sync: false # User must provide this in Render Dashboard
       - key: FRONTEND_ORIGIN
-        value: https://rfc-gym-admin.onrender.com # Change this to your actual frontend URL
+        value: "*" # Allows all origins for easy cloud deployment
       - key: ADMIN_EMAIL
         value: harshvardhan2005.12.16@gmail.com
       - key: ADMIN_PASSWORD
@@ -33,4 +33,4 @@ services:
     rootDir: admin
     envVars:
       - key: VITE_API_URL
-        value: https://rfc-gym-backend.onrender.com/api # Change this to your actual backend URL
+        value: https://gym-2-1xb9.onrender.com/api
