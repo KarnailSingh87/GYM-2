@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import app from './app.js';
 import { initWhatsApp } from './utils/whatsappBot.js';
+import { startCronJobs } from './utils/cronJobs.js';
 
 const PORT = process.env.PORT || 5001;
 
@@ -11,6 +12,9 @@ async function start(){
     // Initialize WhatsApp session in background (best-effort)
     initWhatsApp(process.env.WA_SESSION_ID || 'gymwa').catch(err => console.error('WA init failed', err));
     app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+    
+    // Start automated background tasks
+    startCronJobs();
   } catch(err){
     console.error('Startup error', err);
     process.exit(1);
