@@ -1,7 +1,7 @@
 import React, { useContext } from 'react'
 import { AuthContext } from '../context/AuthContext'
 
-export default function Sidebar({ onNavigate }){
+export default function Sidebar({ onNavigate, onToggleDesktop }){
   const { logout } = useContext(AuthContext)
   
   const navItems = [
@@ -12,14 +12,25 @@ export default function Sidebar({ onNavigate }){
   ]
 
   return (
-    <div className="w-64 glass-dark p-4 md:p-6 h-screen flex flex-col relative md:sticky top-0">
-      <div className="mb-6 md:mb-10 pt-4 md:pt-0">
-        <div className="text-xl md:text-2xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent glow-text">
-          GYM MASTER
+    <div className="w-64 glass-dark p-4 md:p-6 h-full flex flex-col relative">
+      <div className="mb-6 md:mb-10 pt-4 md:pt-0 flex items-center gap-2">
+        {/* Toggle Button for Desktop (hiding the sidebar) */}
+        {onToggleDesktop && (
+          <button 
+            onClick={onToggleDesktop} 
+            className="hidden md:flex p-1.5 -ml-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+            title="Collapse Sidebar"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+        )}
+        <div className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent glow-text uppercase tracking-widest">
+          RFC
         </div>
-        <div className="text-[9px] md:text-[10px] text-blue-400/60 font-semibold tracking-widest mt-1">MANAGEMENT SYSTEM</div>
       </div>
-      
+
       <nav className="flex-1 space-y-2 md:space-y-3 overflow-y-auto pr-2">
         {navItems.map(item => (
           <button 
