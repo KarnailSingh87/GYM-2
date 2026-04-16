@@ -107,7 +107,7 @@ function AddMember({ onNavigate }){
     <div className="max-w-3xl mx-auto space-y-6 md:space-y-8 pb-10">
       <div>
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Onboard New Member</h1>
-        <p className="text-sm md:text-base text-gray-400 mt-1">Register athletes into RFC Gym and initiate their membership sequence.</p>
+        <p className="text-sm md:text-base text-gray-400 mt-1">Register members into RFC Gym and initiate their membership sequence.</p>
       </div>
 
       <div className="glass-card p-4 md:p-8 rounded-2xl md:rounded-3xl">
@@ -240,7 +240,7 @@ function AddMember({ onNavigate }){
               type="submit" 
               className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold py-3 md:py-4 rounded-lg md:rounded-xl transition-all disabled:opacity-50 text-sm md:text-base"
             >
-              {loading ? 'Processing Registration...' : 'Onboard Athlete →'}
+              {loading ? 'Processing Registration...' : 'Onboard Member →'}
             </button>
           </div>
         </form>

@@ -46,7 +46,7 @@ export default function MemberTable(){
           <p className="text-sm md:text-base text-gray-400 mt-1">Manage and monitor all active and expired club memberships.</p>
         </div>
         <div className="text-xs md:text-sm font-medium text-cyan-400 bg-cyan-500/10 px-3 md:px-4 py-1.5 md:py-2 rounded-lg md:rounded-xl border border-cyan-500/20 whitespace-nowrap">
-          {members.length} Total Athletes
+          {members.length} Total Members
         </div>
       </div>
 
@@ -55,7 +55,7 @@ export default function MemberTable(){
           <table className="w-full text-left min-w-[600px]">
             <thead>
               <tr className="text-[10px] md:text-[11px] uppercase tracking-widest text-gray-500 border-b border-white/5">
-                <th className="px-4 md:px-8 py-3 md:py-5">Athlete</th>
+                <th className="px-4 md:px-8 py-3 md:py-5">Member</th>
                 <th className="px-4 md:px-8 py-3 md:py-5">Contact Details</th>
                 <th className="px-4 md:px-8 py-3 md:py-5">Plan Expiry</th>
                 <th className="px-4 md:px-8 py-3 md:py-5 text-right">Actions</th>

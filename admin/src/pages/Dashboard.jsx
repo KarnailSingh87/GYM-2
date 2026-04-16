@@ -41,7 +41,7 @@ function Dashboard(){
   }, 0);
 
   const stats = [
-    { label: 'Total Athletes', value: total, icon: '👥', color: 'from-blue-500/20 to-cyan-400/20', action: () => setShowPending(false) },
+    { label: 'Total Members', value: total, icon: '👥', color: 'from-blue-500/20 to-cyan-400/20', action: () => setShowPending(false) },
     { label: 'Pending Fees', value: pendingCount, icon: '⏳', color: 'from-amber-500/20 to-orange-400/20', action: () => setShowPending(true) },
     { label: 'Collected Revenue', value: `₹${collectedRevenue.toLocaleString('en-IN')}`, icon: '₹', color: 'from-emerald-500/20 to-teal-400/20', action: null },
   ]
