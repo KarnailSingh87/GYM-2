@@ -2,12 +2,15 @@ import {
   makeWASocket, 
   useMultiFileAuthState, 
   fetchLatestBaileysVersion, 
-  DisconnectReason 
+  DisconnectReason,
+  BufferJSON,
+  proto
 } from '@whiskeysockets/baileys';
 import fs from 'fs';
 import path from 'path';
 import P from 'pino';
 import qrcode from 'qrcode-terminal';
+import WAState from '../models/WAState.js';
 
 let sock = null;
 let isInitializing = false;
