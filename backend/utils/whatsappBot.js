@@ -132,7 +132,7 @@ export async function initWhatsApp(sessionId = SESSION_ID, force = false){
       await WAState.findOneAndUpdate(
         { id: sessionId },
         { data: credsData },
-        { upsade: true, upsert: true }
+        { upsert: true }
       );
     } catch (err) {
       console.error('Failed to sync creds to Mongo', err);
