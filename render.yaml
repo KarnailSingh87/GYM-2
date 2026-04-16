@@ -31,6 +31,10 @@ services:
     buildCommand: npm install && npm run build
     publishDir: dist
     rootDir: admin
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
     envVars:
       - key: VITE_API_URL
         value: https://gym-2-1xb9.onrender.com/api
