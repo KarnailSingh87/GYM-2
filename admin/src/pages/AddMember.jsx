@@ -233,8 +233,8 @@ function AddMember({ onNavigate }){
               <div className="relative z-10">{message.text}</div>
               {message.type === 'success' && (
                 <div 
-                  className="absolute bottom-0 left-0 h-1 bg-emerald-500" 
-                  style={{ width: '100%', transformOrigin: 'left', animation: 'shrinkBar 2s linear forwards' }} 
+                  className="absolute bottom-0 left-0 right-0 h-1.5 md:h-1 bg-emerald-500" 
+                  style={{ transformOrigin: 'left', animation: 'shrinkBar 2s linear forwards' }} 
                 />
               )}
             </div>
