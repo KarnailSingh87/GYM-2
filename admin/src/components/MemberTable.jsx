@@ -38,20 +38,33 @@ export default function MemberTable(){
     fetchMembers()
   }
 
-  function downloadActiveMembersPDF() {
-    const activeMembers = members.filter(m => m.expiryDate && new Date(m.expiryDate) > new Date());
-    if(activeMembers.length === 0) {
-      alert("No active members to download.");
+  function downloadPDF(filterType) {
+    let filteredMembers = [];
+    let title = "";
+    let filename = "";
+
+    if (filterType === 'active') {
+      filteredMembers = members.filter(m => m.expiryDate && new Date(m.expiryDate) > new Date());
+      title = "Active Members List - RFC Gym";
+      filename = "RFC_Active_Members.pdf";
+    } else if (filterType === 'pending') {
+      filteredMembers = members.filter(m => m.paymentStatus === 'pending');
+      title = "Pending Fees Members List - RFC Gym";
+      filename = "RFC_Pending_Fees_Members.pdf";
+    }
+
+    if(filteredMembers.length === 0) {
+      alert(`No ${filterType} members to download.`);
       return;
     }
 
     const doc = new jsPDF();
-    doc.text("Active Members List - RFC Gym", 14, 15);
+    doc.text(title, 14, 15);
     
     const tableColumn = ["Name", "Phone", "Address", "Join Date", "Expiry Date", "Plan", "Payment Status"];
     const tableRows = [];
 
-    activeMembers.forEach(m => {
+    filteredMembers.forEach(m => {
       const row = [
         m.name || "N/A",
         m.phone || "N/A",
@@ -70,7 +83,7 @@ export default function MemberTable(){
       startY: 20,
     });
 
-    doc.save("RFC_Active_Members.pdf");
+    doc.save(filename);
   }
 
   if(loading && members.length === 0) return <div className="text-center py-20 text-gray-400">Loading directory...</div>
@@ -84,10 +97,16 @@ export default function MemberTable(){
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <button 
-            onClick={downloadActiveMembersPDF}
+            onClick={() => downloadPDF('active')}
             className="text-xs md:text-sm font-medium text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 px-3 md:px-4 py-1.5 md:py-2 rounded-lg md:rounded-xl border border-emerald-500/20 whitespace-nowrap transition-colors"
           >
-            Download PDF 📄
+            Active PDF 📄
+          </button>
+          <button 
+            onClick={() => downloadPDF('pending')}
+            className="text-xs md:text-sm font-medium text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 px-3 md:px-4 py-1.5 md:py-2 rounded-lg md:rounded-xl border border-amber-500/20 whitespace-nowrap transition-colors"
+          >
+            Pending Fees PDF 📄
           </button>
           <div className="text-xs md:text-sm font-medium text-cyan-400 bg-cyan-500/10 px-3 md:px-4 py-1.5 md:py-2 rounded-lg md:rounded-xl border border-cyan-500/20 whitespace-nowrap">
             {members.length} Total Members
