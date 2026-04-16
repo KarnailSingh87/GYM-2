@@ -55,8 +55,9 @@ function AddMember(){
       return
     }
     setLoading(true)
+    const apiUrl = import.meta.env.DEV ? 'http://localhost:5001/api' : 'https://gym-2-1xb9.onrender.com/api';
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/members`, {
+      const res = await fetch(`${apiUrl}/members`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ 

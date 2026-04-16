@@ -6,9 +6,10 @@ function Dashboard(){
   const [error, setError] = useState(null)
 
   const { token } = useContext(AuthContext)
+  const apiUrl = import.meta.env.DEV ? 'http://localhost:5001/api' : 'https://gym-2-1xb9.onrender.com/api';
   useEffect(()=>{
     if(!token) return
-    fetch(`${import.meta.env.VITE_API_URL}/members`, { headers: { Authorization: `Bearer ${token}` } })
+    fetch(`${apiUrl}/members`, { headers: { Authorization: `Bearer ${token}` } })
       .then(r=>r.json())
       .then(d=>{ if(d.members) setMembers(d.members); else setError('Unable to fetch') })
       .catch(e=>setError(e.message))

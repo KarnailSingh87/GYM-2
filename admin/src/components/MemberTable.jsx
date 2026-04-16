@@ -6,11 +6,12 @@ export default function MemberTable(){
   const [members, setMembers] = useState([])
   const [loading, setLoading] = useState(false)
 
+  const apiUrl = import.meta.env.DEV ? 'http://localhost:5001/api' : 'https://gym-2-1xb9.onrender.com/api';
   async function fetchMembers(){
     if(!token) return
     setLoading(true)
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/members`, { headers: { Authorization: `Bearer ${token}` } })
+      const res = await fetch(`${apiUrl}/members`, { headers: { Authorization: `Bearer ${token}` } })
       const data = await res.json()
       setMembers(data.members || [])
     } catch (e) {
@@ -24,14 +25,14 @@ export default function MemberTable(){
 
   async function removeMember(id){
     if(!window.confirm('Delete this member?')) return
-    await fetch(`${import.meta.env.VITE_API_URL}/members/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } })
+    await fetch(`${apiUrl}/members/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } })
     fetchMembers()
   }
 
   async function editMember(id){
     const name = window.prompt('New name')
     if(!name) return
-    await fetch(`${import.meta.env.VITE_API_URL}/members/${id}`, { method: 'PUT', headers: { 'Content-Type':'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ name }) })
+    await fetch(`${apiUrl}/members/${id}`, { method: 'PUT', headers: { 'Content-Type':'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ name }) })
     fetchMembers()
   }
 

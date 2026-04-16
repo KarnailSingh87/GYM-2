@@ -7,9 +7,10 @@ export default function Settings() {
   const [loading, setLoading] = useState(true);
   const [logoutLoading, setLogoutLoading] = useState(false);
 
+  const apiUrl = import.meta.env.DEV ? 'http://localhost:5001/api' : 'https://gym-2-1xb9.onrender.com/api';
   async function fetchStatus() {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/whatsapp/status`, {
+      const res = await fetch(`${apiUrl}/whatsapp/status`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
@@ -30,7 +31,7 @@ export default function Settings() {
   async function handleRefresh() {
     try {
       setLoading(true);
-      await fetch(`${import.meta.env.VITE_API_URL}/whatsapp/refresh`, {
+      await fetch(`${apiUrl}/whatsapp/refresh`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -46,7 +47,7 @@ export default function Settings() {
     if(!window.confirm('This will clear all WhatsApp session data. You will need to re-scan the QR code. Continue?')) return;
     setLogoutLoading(true);
     try {
-      await fetch(`${import.meta.env.VITE_API_URL}/whatsapp/logout`, {
+      await fetch(`${apiUrl}/whatsapp/logout`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
