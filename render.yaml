@@ -14,7 +14,7 @@ services:
       - key: MONGO_URI
         sync: false # User must provide this in Render Dashboard
       - key: FRONTEND_ORIGIN
-        value: "*" # Allows all origins for easy cloud deployment
+        value: https://rfcadmin.onrender.com
       - key: ADMIN_EMAIL
         value: harshvardhan2005.12.16@gmail.com
       - key: ADMIN_PASSWORD
