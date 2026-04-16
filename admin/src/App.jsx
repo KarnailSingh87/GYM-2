@@ -64,7 +64,7 @@ function AppInner(){
         <div className="flex-1 p-4 md:p-8 w-full max-w-full overflow-x-hidden">
           <div className="max-w-7xl mx-auto w-full">
             {view === 'dashboard' && <Dashboard />}
-            {view === 'add' && <AddMember />}
+            {view === 'add' && <AddMember onNavigate={setView} />}
             {view === 'members' && <MemberTable />}
             {view === 'settings' && <Settings />}
           </div>

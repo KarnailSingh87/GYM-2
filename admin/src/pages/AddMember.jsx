@@ -1,7 +1,7 @@
 import React, { useState, useContext } from 'react'
 import { AuthContext } from '../context/AuthContext'
 
-function AddMember(){
+function AddMember({ onNavigate }){
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
   const [address, setAddress] = useState('')
@@ -10,6 +10,7 @@ function AddMember(){
   const [endTime, setEndTime] = useState('08:00')
   const [timeSlot, setTimeSlot] = useState('')
   const [membershipType, setMembershipType] = useState('monthly')
+  const [paymentStatus, setPaymentStatus] = useState('pending')
   const [customMessage, setCustomMessage] = useState('')
   const [message, setMessage] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -21,6 +22,12 @@ function AddMember(){
     { label: '3 Months', value: 'quarterly' },
     { label: '6 Months', value: 'sixmonth' },
     { label: 'Annual', value: 'yearly' },
+  ]
+
+  const paymentOptions = [
+    { label: 'Online', value: 'online' },
+    { label: 'Cash', value: 'cash' },
+    { label: 'Pending', value: 'pending' },
   ]
 
   // Effect to sync startTime/endTime into the timeSlot string
@@ -67,13 +74,23 @@ function AddMember(){
           joinDate,
           timeSlot,
           membershipType,
+          paymentStatus,
           customMessage
         })
       })
       const data = await res.json()
       if(res.ok){
-        setMessage({ text: 'Member successfully created! RFC Welcome Message Sent.', type: 'success' })
-        setName(''); setPhone(''); setAddress(''); setCustomMessage('')
+        let paymentMsg = '';
+        if (paymentStatus === 'online') paymentMsg = 'Payment marked as Online.';
+        else if (paymentStatus === 'cash') paymentMsg = 'Payment marked as Cash.';
+        else paymentMsg = 'Fees marked as Pending.';
+        
+        setMessage({ text: `Member successfully created! ${paymentMsg} RFC Welcome Message Sent.`, type: 'success' })
+        
+        setName(''); setPhone(''); setAddress(''); setCustomMessage('');
+        setTimeout(() => {
+          if (onNavigate) onNavigate('dashboard');
+        }, 3500);
       } else {
         setMessage({ text: data.message || 'Operation failed', type: 'error' })
       }
@@ -155,6 +172,28 @@ function AddMember(){
                   className={`p-3 md:p-4 rounded-lg md:rounded-xl border transition-all text-sm md:text-base ${
                     membershipType === p.value 
                       ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-400 font-bold' 
+                      : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'
+                  }`}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-1.5 md:space-y-2">
+            <label className="text-[10px] md:text-xs font-semibold text-gray-500 uppercase tracking-widest ml-1">Payment Method</label>
+            <div className="grid grid-cols-3 gap-2 md:gap-4">
+              {paymentOptions.map(p => (
+                <button
+                  type="button"
+                  key={p.value}
+                  onClick={()=>setPaymentStatus(p.value)}
+                  className={`p-3 md:p-4 rounded-lg md:rounded-xl border transition-all text-sm md:text-base ${
+                    paymentStatus === p.value 
+                      ? p.value === 'pending' 
+                        ? 'bg-amber-500/20 border-amber-500/50 text-amber-400 font-bold' 
+                        : 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400 font-bold'
                       : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'
                   }`}
                 >

@@ -4,6 +4,7 @@ import { AuthContext } from '../context/AuthContext'
 function Dashboard(){
   const [members, setMembers] = useState([])
   const [error, setError] = useState(null)
+  const [showPending, setShowPending] = useState(false)
 
   const { token } = useContext(AuthContext)
   const apiUrl = import.meta.env.DEV ? 'http://localhost:5005/api' : 'https://gym-2-1xb9.onrender.com/api';
@@ -15,14 +16,33 @@ function Dashboard(){
       .catch(e=>setError(e.message))
   }, [token])
 
+  const activeMembers = members.filter(m => new Date(m.expiryDate) > new Date())
   const total = members.length
-  const active = members.filter(m => new Date(m.expiryDate) > new Date()).length
-  const revenue = total * 30
+  const active = activeMembers.length
+  
+  // Pending fee members
+  const pendingMembers = members.filter(m => m.paymentStatus === 'pending')
+  const pendingCount = pendingMembers.length
+  
+  // Real revenue calculated from currently active members in rupees
+  const rateCard = {
+    monthly: 1500,
+    quarterly: 4000,
+    sixmonth: 7500,
+    yearly: 12000,
+    other: 0
+  };
+  
+  // Total real revenue generated from collected plans ('online', 'cash', 'paid')
+  const collectedRevenue = members.reduce((acc, m) => {
+    if (m.paymentStatus === 'pending' || m.paymentStatus === 'overdue') return acc;
+    return acc + (rateCard[m.membershipType] || 0);
+  }, 0);
 
   const stats = [
-    { label: 'Total Members', value: total, icon: '👥', color: 'from-blue-500/20 to-cyan-400/20' },
-    { label: 'Active Plans', value: active, icon: '⚡', color: 'from-emerald-500/20 to-teal-400/20' },
-    { label: 'Estimated Revenue', value: `$${revenue}`, icon: '💰', color: 'from-amber-500/20 to-orange-400/20' },
+    { label: 'Total Athletes', value: total, icon: '👥', color: 'from-blue-500/20 to-cyan-400/20', action: () => setShowPending(false) },
+    { label: 'Pending Fees', value: pendingCount, icon: '⏳', color: 'from-amber-500/20 to-orange-400/20', action: () => setShowPending(true) },
+    { label: 'Collected Revenue', value: `₹${collectedRevenue.toLocaleString('en-IN')}`, icon: '₹', color: 'from-emerald-500/20 to-teal-400/20', action: null },
   ]
 
   return (
@@ -34,7 +54,11 @@ function Dashboard(){
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
         {stats.map((stat, idx) => (
-          <div key={idx} className="glass-card p-5 md:p-6 rounded-2xl relative overflow-hidden group">
+          <div 
+            key={idx} 
+            onClick={stat.action}
+            className={`glass-card p-5 md:p-6 rounded-2xl relative overflow-hidden group ${stat.action ? 'cursor-pointer hover:scale-[1.02] active:scale-[0.98]' : ''} transition-all`}
+          >
             <div className={`absolute inset-0 bg-gradient-to-br ${stat.color} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
             <div className="relative z-10">
               <div className="text-2xl md:text-3xl mb-3 md:mb-4">{stat.icon}</div>
@@ -47,8 +71,15 @@ function Dashboard(){
 
       <div className="glass-card rounded-2xl overflow-hidden">
         <div className="p-4 md:p-6 border-b border-white/5 flex justify-between items-center">
-          <h3 className="font-semibold text-base md:text-lg">Recent Registrations</h3>
-          <button className="text-xs md:text-sm text-cyan-400 hover:text-cyan-300 font-medium">View All →</button>
+          <h3 className="font-semibold text-base md:text-lg">
+            {showPending ? 'Members with Pending Fees' : 'Recent Registrations'}
+          </h3>
+          <button 
+            className="text-xs md:text-sm text-cyan-400 hover:text-cyan-300 font-medium"
+            onClick={() => showPending ? setShowPending(false) : null}
+          >
+             {showPending ? 'Clear Filter ✕' : 'View All →'}
+          </button>
         </div>
         <div className="overflow-x-auto w-full">
           <table className="w-full text-left min-w-[500px]">
@@ -60,7 +91,7 @@ function Dashboard(){
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              {members.slice(0, 5).map(m => {
+              {(showPending ? pendingMembers : members.slice(0, 5)).map(m => {
                 const isActive = new Date(m.expiryDate) > new Date()
                 return (
                   <tr key={m._id} className="hover:bg-white/[0.02] transition-colors group">
@@ -80,7 +111,7 @@ function Dashboard(){
               })}
             </tbody>
           </table>
-          {members.length === 0 && <div className="p-6 md:p-10 text-center text-sm md:text-base text-gray-500">No members found yet.</div>}
+          {((showPending ? pendingMembers : members).length === 0) && <div className="p-6 md:p-10 text-center text-sm md:text-base text-gray-500">{showPending ? 'No members have pending fees.' : 'No members found yet.'}</div>}
         </div>
       </div>
     </div>
