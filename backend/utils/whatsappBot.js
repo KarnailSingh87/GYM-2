@@ -72,6 +72,21 @@ export async function initWhatsApp(sessionId = SESSION_ID, force = false){
   const sessionsDir = path.resolve(process.cwd(), 'sessions', sessionId);
   if(!fs.existsSync(sessionsDir)) fs.mkdirSync(sessionsDir, { recursive: true });
   
+  const credsFile = path.join(sessionsDir, 'creds.json');
+  
+  // CLOUD SYNC: Restore from MongoDB if local file is missing (For Render/Deployment)
+  if (!fs.existsSync(credsFile)) {
+    try {
+      const savedState = await WAState.findOne({ id: sessionId });
+      if (savedState) {
+        console.log('☁️ Restoring WhatsApp session from MongoDB...');
+        fs.writeFileSync(credsFile, savedState.data);
+      }
+    } catch (err) {
+      console.error('Failed to restore from Mongo', err);
+    }
+  }
+
   const { state, saveCreds } = await useMultiFileAuthState(sessionsDir);
   const { version } = await fetchLatestBaileysVersion();
   
@@ -109,7 +124,20 @@ export async function initWhatsApp(sessionId = SESSION_ID, force = false){
     }
   });
 
-  sock.ev.on('creds.update', saveCreds);
+  sock.ev.on('creds.update', async () => {
+    await saveCreds();
+    // CLOUD SYNC: Save to MongoDB for persistence
+    try {
+      const credsData = fs.readFileSync(credsFile, 'utf-8');
+      await WAState.findOneAndUpdate(
+        { id: sessionId },
+        { data: credsData },
+        { upsade: true, upsert: true }
+      );
+    } catch (err) {
+      console.error('Failed to sync creds to Mongo', err);
+    }
+  });
   return sock;
 }
 

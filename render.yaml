@@ -1,0 +1,36 @@
+services:
+  # Backend Web Service
+  - type: web
+    name: rfc-gym-backend
+    env: node
+    plan: free
+    region: singapore
+    buildCommand: npm install
+    startCommand: node server.js
+    rootDir: backend
+    envVars:
+      - key: PORT
+        value: 5005
+      - key: MONGO_URI
+        sync: false # User must provide this in Render Dashboard
+      - key: FRONTEND_ORIGIN
+        value: https://rfc-gym-admin.onrender.com # Change this to your actual frontend URL
+      - key: ADMIN_EMAIL
+        value: harshvardhan2005.12.16@gmail.com
+      - key: ADMIN_PASSWORD
+        value: K@rnail0011
+      - key: JWT_SECRET
+        generateValue: true
+
+  # Admin Frontend (Static Site)
+  - type: web
+    name: rfc-gym-admin
+    env: static
+    plan: free
+    region: singapore
+    buildCommand: npm install && npm run build
+    publishDir: dist
+    rootDir: admin
+    envVars:
+      - key: VITE_API_URL
+        value: https://rfc-gym-backend.onrender.com/api # Change this to your actual backend URL
