@@ -1,0 +1,10 @@
+{
+  "name": "gym-management-system",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "start:backend": "cd backend && npm run dev",
+    "start:admin": "cd admin && npm run dev",
+    "dev": "echo 'Run `npm run start:backend` and `npm run start:admin` in separate terminals'"
+  }
+}
