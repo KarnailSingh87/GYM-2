@@ -11,6 +11,7 @@ function AddMember({ onNavigate }){
   const [timeSlot, setTimeSlot] = useState('')
   const [membershipType, setMembershipType] = useState('monthly')
   const [paymentStatus, setPaymentStatus] = useState('pending')
+  const [amountReceived, setAmountReceived] = useState('')
   const [customMessage, setCustomMessage] = useState('')
   const [message, setMessage] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -75,6 +76,7 @@ function AddMember({ onNavigate }){
           timeSlot,
           membershipType,
           paymentStatus,
+          amountReceived: Number(amountReceived) || 0,
           customMessage
         })
       })
@@ -87,7 +89,7 @@ function AddMember({ onNavigate }){
         
         setMessage({ text: `Member successfully created! ${paymentMsg} RFC Welcome Message Sent.`, type: 'success' })
         
-        setName(''); setPhone(''); setAddress(''); setCustomMessage('');
+        setName(''); setPhone(''); setAddress(''); setCustomMessage(''); setAmountReceived('');
         setTimeout(() => {
           if (onNavigate) onNavigate('dashboard');
         }, 3500);
@@ -201,6 +203,18 @@ function AddMember({ onNavigate }){
                 </button>
               ))}
             </div>
+            {paymentStatus !== 'pending' && (
+              <div className="pt-2">
+                <label className="text-[10px] md:text-xs font-semibold text-gray-500 uppercase tracking-widest ml-1">Amount Received (₹)</label>
+                <input 
+                  type="number"
+                  className="w-full mt-1.5 md:mt-2 bg-white/5 border border-white/10 rounded-lg md:rounded-xl px-3 md:px-4 py-2.5 md:py-3 text-sm md:text-base outline-none focus:border-cyan-500/50 focus:bg-white/[0.08]" 
+                  placeholder="Ex. 1500" 
+                  value={amountReceived} 
+                  onChange={e=>setAmountReceived(e.target.value)} 
+                />
+              </div>
+            )}
           </div>
 
           <div className="space-y-1.5 md:space-y-2">

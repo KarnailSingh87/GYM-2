@@ -3,7 +3,7 @@ import { sendWelcome } from '../utils/whatsappBot.js';
 
 export async function createMember(req, res){
   try{
-    const { name, phone, address, membershipType, timeSlot, joinDate: customJoinDate, customMessage, paymentStatus } = req.body;
+    const { name, phone, address, membershipType, timeSlot, joinDate: customJoinDate, customMessage, paymentStatus, amountReceived } = req.body;
     if(!name || !phone) return res.status(400).json({ message: 'Missing fields' });
 
     // Member record creation
@@ -25,12 +25,13 @@ export async function createMember(req, res){
       membershipType, 
       expiryDate: expiry, 
       timeSlot,
-      paymentStatus: paymentStatus || 'pending' 
+      paymentStatus: paymentStatus || 'pending',
+      amountReceived: amountReceived || 0
     });
     await member.save();
 
     // Directly send professional welcome/confirmation message
-    await sendWelcome(phone, { name, joinDate, expiryDate: expiry, timeSlot }).catch(err => console.error('Welcome send failed', err));
+    await sendWelcome(phone, { name, joinDate, expiryDate: expiry, timeSlot, paymentStatus: paymentStatus || 'pending' }).catch(err => console.error('Welcome send failed', err));
 
     res.status(201).json({ member, messageSent: true });
   } catch(err){

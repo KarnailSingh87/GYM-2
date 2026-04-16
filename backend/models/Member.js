@@ -8,7 +8,8 @@ const MemberSchema = new mongoose.Schema({
   expiryDate: { type: Date },
   membershipType: { type: String, enum: ['monthly','quarterly','sixmonth','yearly','other'], default: 'monthly' },
   timeSlot: { type: String },
-  paymentStatus: { type: String, enum: ['paid','pending','overdue','online','cash'], default: 'pending' }
+  paymentStatus: { type: String, enum: ['paid','pending','overdue','online','cash'], default: 'pending' },
+  amountReceived: { type: Number, default: 0 }
 }, { timestamps: true });
 
 export default mongoose.model('Member', MemberSchema);

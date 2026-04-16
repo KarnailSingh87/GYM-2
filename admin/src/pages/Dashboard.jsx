@@ -33,9 +33,10 @@ function Dashboard(){
     other: 0
   };
   
-  // Total real revenue generated from collected plans ('online', 'cash', 'paid')
+  // Total real revenue generated from manually collected amounts, or fallback to rateCard if not provided but paid
   const collectedRevenue = members.reduce((acc, m) => {
     if (m.paymentStatus === 'pending' || m.paymentStatus === 'overdue') return acc;
+    if (m.amountReceived && m.amountReceived > 0) return acc + m.amountReceived;
     return acc + (rateCard[m.membershipType] || 0);
   }, 0);
 

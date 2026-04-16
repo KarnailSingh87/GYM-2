@@ -179,10 +179,14 @@ export async function sendText(phone, text){
   }
 }
 
-export async function sendWelcome(phone, { name, joinDate, expiryDate, timeSlot }){
+export async function sendWelcome(phone, { name, joinDate, expiryDate, timeSlot, paymentStatus }){
   const start = new Date(joinDate).toLocaleDateString();
   const end = new Date(expiryDate).toLocaleDateString();
   
-  const text = `🔥 *WELCOME TO RFC GYM* 🔥\n\nHello *${name}*,\n\nWelcome to the family! Your registration is complete. Here are your details:\n\n📅 *Joining Date:* ${start}\n⏳ *Expiry Date:* ${end}\n⏰ *Time Slot:* ${timeSlot || 'Anytime'}\n\nWe are excited to see you crush your goals at *RFC Gym*! 💪\n\n_Stay Fit, Stay Strong!_`;
+  const paymentText = paymentStatus === 'online' || paymentStatus === 'cash' 
+    ? 'Payment Received ✅' 
+    : 'Payment Pending ⌛';
+
+  const text = `🔥 *WELCOME TO RFC GYM* 🔥\n\nHello *${name}*,\n\nWelcome to the family! Your registration is complete. Here are your details:\n\n📅 *Joining Date:* ${start}\n⏳ *Expiry Date:* ${end}\n⏰ *Time Slot:* ${timeSlot || 'Anytime'}\n💳 *Payment Status:* ${paymentText}\n\nWe are excited to see you crush your goals at *RFC Gym*! 💪\n\n_Stay Fit, Stay Strong!_`;
   return sendText(phone, text);
 }
