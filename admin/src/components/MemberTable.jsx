@@ -178,6 +178,7 @@ export default function MemberTable(){
   const [members, setMembers] = useState([])
   const [loading, setLoading] = useState(false)
   const [editingMember, setEditingMember] = useState(null)
+  const [searchTerm, setSearchTerm] = useState('')
 
   const apiUrl = import.meta.env.DEV ? 'http://localhost:5005/api' : 'https://gym-2-1xb9.onrender.com/api';
   async function fetchMembers(){
@@ -255,6 +256,11 @@ export default function MemberTable(){
     doc.save(filename);
   }
 
+  const displayedMembers = members.filter(m => 
+    (m.name || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+    (m.phone || '').includes(searchTerm)
+  );
+
   if(loading && members.length === 0) return <div className="text-center py-20 text-gray-400">Loading directory...</div>
 
   return (
@@ -274,6 +280,13 @@ export default function MemberTable(){
           <p className="text-sm md:text-base text-gray-400 mt-1">Manage and monitor all active and expired club memberships.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <input 
+            type="text" 
+            placeholder="Search by name or phone..." 
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full sm:w-auto bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-sm md:text-base outline-none focus:border-cyan-500/50 focus:bg-white/[0.08]"
+          />
           <button 
             onClick={() => downloadPDF('active')}
             className="text-xs md:text-sm font-medium text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 px-3 md:px-4 py-1.5 md:py-2 rounded-lg md:rounded-xl border border-emerald-500/20 whitespace-nowrap transition-colors"
@@ -304,7 +317,7 @@ export default function MemberTable(){
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              {members.map(m => {
+              {displayedMembers.map(m => {
                 const isActive = m.expiryDate ? new Date(m.expiryDate) > new Date() : false
                 return (
                   <tr key={m._id} className="hover:bg-white/[0.02] transition-colors group">
@@ -350,10 +363,10 @@ export default function MemberTable(){
               })}
             </tbody>
           </table>
-          {members.length === 0 && !loading && (
+          {displayedMembers.length === 0 && !loading && (
             <div className="p-20 text-center">
               <div className="text-4xl mb-4 opacity-20">📂</div>
-              <div className="text-gray-500 font-medium">No members found in the database.</div>
+              <div className="text-gray-500 font-medium">No members match your search criteria.</div>
             </div>
           )}
         </div>
