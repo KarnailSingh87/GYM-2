@@ -2,7 +2,6 @@ import mongoose from 'mongoose'
 import request from 'supertest'
 import { MongoMemoryServer } from 'mongodb-memory-server'
 import app from '../app.js'
-import bcrypt from 'bcrypt'
 import Member from '../models/Member.js'
 
 let mongo
@@ -13,8 +12,7 @@ beforeAll(async () => {
   await mongoose.connect(uri, { dbName: 'testdb' })
   // set env admin credentials for the test
   process.env.ADMIN_EMAIL = 'test@admin.com'
-  const hash = await bcrypt.hash('password', 10)
-  process.env.ADMIN_PASSWORD_HASH = hash
+  process.env.ADMIN_PASSWORD = 'password'
   process.env.JWT_SECRET = 'testsecret'
 })
 
