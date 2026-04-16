@@ -6,5 +6,9 @@
     "start:backend": "cd backend && npm run dev",
     "start:admin": "cd admin && npm run dev",
     "dev": "echo 'Run `npm run start:backend` and `npm run start:admin` in separate terminals'"
+  },
+  "dependencies": {
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.7"
   }
 }

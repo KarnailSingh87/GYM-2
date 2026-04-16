@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useContext } from 'react'
 import { AuthContext } from '../context/AuthContext'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 
 export default function MemberTable(){
   const { token } = useContext(AuthContext)
@@ -36,6 +38,41 @@ export default function MemberTable(){
     fetchMembers()
   }
 
+  function downloadActiveMembersPDF() {
+    const activeMembers = members.filter(m => m.expiryDate && new Date(m.expiryDate) > new Date());
+    if(activeMembers.length === 0) {
+      alert("No active members to download.");
+      return;
+    }
+
+    const doc = new jsPDF();
+    doc.text("Active Members List - RFC Gym", 14, 15);
+    
+    const tableColumn = ["Name", "Phone", "Address", "Join Date", "Expiry Date", "Plan", "Payment Status"];
+    const tableRows = [];
+
+    activeMembers.forEach(m => {
+      const row = [
+        m.name || "N/A",
+        m.phone || "N/A",
+        m.address || "N/A",
+        m.joinDate ? new Date(m.joinDate).toLocaleDateString() : "N/A",
+        m.expiryDate ? new Date(m.expiryDate).toLocaleDateString() : "N/A",
+        m.membershipType || "N/A",
+        m.paymentStatus || "pending"
+      ];
+      tableRows.push(row);
+    });
+
+    autoTable(doc, {
+      head: [tableColumn],
+      body: tableRows,
+      startY: 20,
+    });
+
+    doc.save("RFC_Active_Members.pdf");
+  }
+
   if(loading && members.length === 0) return <div className="text-center py-20 text-gray-400">Loading directory...</div>
 
   return (
@@ -45,8 +82,16 @@ export default function MemberTable(){
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Member Directory</h1>
           <p className="text-sm md:text-base text-gray-400 mt-1">Manage and monitor all active and expired club memberships.</p>
         </div>
-        <div className="text-xs md:text-sm font-medium text-cyan-400 bg-cyan-500/10 px-3 md:px-4 py-1.5 md:py-2 rounded-lg md:rounded-xl border border-cyan-500/20 whitespace-nowrap">
-          {members.length} Total Members
+        <div className="flex flex-wrap items-center gap-2">
+          <button 
+            onClick={downloadActiveMembersPDF}
+            className="text-xs md:text-sm font-medium text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 px-3 md:px-4 py-1.5 md:py-2 rounded-lg md:rounded-xl border border-emerald-500/20 whitespace-nowrap transition-colors"
+          >
+            Download PDF 📄
+          </button>
+          <div className="text-xs md:text-sm font-medium text-cyan-400 bg-cyan-500/10 px-3 md:px-4 py-1.5 md:py-2 rounded-lg md:rounded-xl border border-cyan-500/20 whitespace-nowrap">
+            {members.length} Total Members
+          </div>
         </div>
       </div>
 
