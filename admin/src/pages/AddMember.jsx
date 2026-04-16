@@ -55,7 +55,7 @@ function AddMember(){
       return
     }
     setLoading(true)
-    const apiUrl = import.meta.env.DEV ? 'http://localhost:5001/api' : 'https://gym-2-1xb9.onrender.com/api';
+    const apiUrl = import.meta.env.DEV ? 'http://localhost:5005/api' : 'https://gym-2-1xb9.onrender.com/api';
     try {
       const res = await fetch(`${apiUrl}/members`, {
         method: 'POST',
@@ -85,128 +85,111 @@ function AddMember(){
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-8 pb-10">
+    <div className="max-w-3xl mx-auto space-y-6 md:space-y-8 pb-10">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Onboard New Member</h1>
-        <p className="text-gray-400 mt-1">Register athletes into RFC Gym and initiate their membership sequence.</p>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Onboard New Member</h1>
+        <p className="text-sm md:text-base text-gray-400 mt-1">Register athletes into RFC Gym and initiate their membership sequence.</p>
       </div>
 
-      <div className="glass-card p-8 rounded-3xl">
-        <form onSubmit={submit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-widest ml-1">Full Name</label>
+      <div className="glass-card p-4 md:p-8 rounded-2xl md:rounded-3xl">
+        <form onSubmit={submit} className="space-y-4 md:space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+            <div className="space-y-1.5 md:space-y-2">
+              <label className="text-[10px] md:text-xs font-semibold text-gray-500 uppercase tracking-widest ml-1">Full Name</label>
               <input 
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-cyan-500/50 focus:bg-white/[0.08] transition-all" 
+                className="w-full bg-white/5 border border-white/10 rounded-lg md:rounded-xl px-3 md:px-4 py-2.5 md:py-3 text-sm md:text-base outline-none focus:border-cyan-500/50 focus:bg-white/[0.08] transition-all" 
                 placeholder="Ex. John Wick" 
                 value={name} 
                 onChange={e=>setName(e.target.value)} 
               />
             </div>
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-widest ml-1">Phone Number (WhatsApp)</label>
+            <div className="space-y-1.5 md:space-y-2">
+              <label className="text-[10px] md:text-xs font-semibold text-gray-500 uppercase tracking-widest ml-1">Phone Number (WhatsApp)</label>
               <input 
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-cyan-500/50 focus:bg-white/[0.08] transition-all" 
+                className="w-full bg-white/5 border border-white/10 rounded-lg md:rounded-xl px-3 md:px-4 py-2.5 md:py-3 text-sm md:text-base outline-none focus:border-cyan-500/50 focus:bg-white/[0.08] transition-all" 
                 placeholder="+91 99999 00000" 
                 value={phone} 
                 onChange={e=>setPhone(e.target.value)} 
               />
             </div>
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-widest ml-1">Joining Date</label>
+            <div className="space-y-1.5 md:space-y-2">
+              <label className="text-[10px] md:text-xs font-semibold text-gray-500 uppercase tracking-widest ml-1">Address</label>
               <input 
-                type="date"
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-cyan-500/50 focus:bg-white/[0.08] transition-all [color-scheme:dark]" 
+                className="w-full bg-white/5 border border-white/10 rounded-lg md:rounded-xl px-3 md:px-4 py-2.5 md:py-3 text-sm md:text-base outline-none focus:border-cyan-500/50 focus:bg-white/[0.08] transition-all" 
+                placeholder="Ex. 123 Main St, Springfield" 
+                value={address} 
+                onChange={e=>setAddress(e.target.value)} 
+              />
+            </div>
+            <div className="space-y-1.5 md:space-y-2">
+              <label className="text-[10px] md:text-xs font-semibold text-gray-500 uppercase tracking-widest ml-1">Joining Date</label>
+              <input 
+                type="date" 
+                className="w-full bg-white/5 border border-white/10 rounded-lg md:rounded-xl px-3 md:px-4 py-2.5 md:py-3 text-sm md:text-base outline-none focus:border-cyan-500/50 focus:bg-white/[0.08]" 
                 value={joinDate} 
                 onChange={e=>setJoinDate(e.target.value)} 
               />
             </div>
-            
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-widest ml-1">Time Slot Duration (Max 2h)</label>
-              <div className="flex items-center space-x-2">
-                <input 
-                  type="time"
-                  className="bg-white/5 border border-white/10 rounded-xl px-3 py-3 outline-none focus:border-cyan-500/50 transition-all [color-scheme:dark] flex-1 text-sm"
-                  value={startTime}
-                  onChange={e => setStartTime(e.target.value)}
-                />
-                <span className="text-gray-600 font-bold">to</span>
-                <input 
-                  type="time"
-                  className={`bg-white/5 border rounded-xl px-3 py-3 outline-none transition-all [color-scheme:dark] flex-1 text-sm ${
-                    durationExceeded() ? 'border-red-500/50 text-red-400' : 'border-white/10 focus:border-cyan-500/50'
-                  }`}
-                  value={endTime}
-                  onChange={e => setEndTime(e.target.value)}
-                />
-              </div>
-              <div className="text-[10px] text-gray-500 flex justify-between px-1">
-                <span>Selected: {timeSlot}</span>
-                {durationExceeded() && <span className="text-red-400">Exceeds 2 hours!</span>}
-              </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+            <div className="space-y-1.5 md:space-y-2">
+              <label className="text-[10px] md:text-xs font-semibold text-gray-500 uppercase tracking-widest ml-1">Start Time</label>
+              <input type="time" className="w-full bg-white/5 border border-white/10 rounded-lg md:rounded-xl px-3 md:px-4 py-2.5 md:py-3 text-sm md:text-base" value={startTime} onChange={e=>setStartTime(e.target.value)} />
+            </div>
+            <div className="space-y-1.5 md:space-y-2">
+              <label className="text-[10px] md:text-xs font-semibold text-gray-500 uppercase tracking-widest ml-1">End Time</label>
+              <input type="time" className="w-full bg-white/5 border border-white/10 rounded-lg md:rounded-xl px-3 md:px-4 py-2.5 md:py-3 text-sm md:text-base" value={endTime} onChange={e=>setEndTime(e.target.value)} />
+              {durationExceeded() && <div className="text-red-400 text-xs mt-1">Duration cannot exceed 2 hours</div>}
             </div>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-xs font-semibold text-gray-500 uppercase tracking-widest ml-1">Residential Address</label>
-            <textarea 
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-cyan-500/50 focus:bg-white/[0.08] transition-all min-h-[80px]" 
-              placeholder="Enter full address..." 
-              value={address} 
-              onChange={e=>setAddress(e.target.value)} 
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-xs font-semibold text-gray-500 uppercase tracking-widest ml-1">Membership Plan</label>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {plans.map(plan => (
+          <div className="space-y-1.5 md:space-y-2">
+            <label className="text-[10px] md:text-xs font-semibold text-gray-500 uppercase tracking-widest ml-1">Membership Plan</label>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 md:gap-4">
+              {plans.map(p => (
                 <button
-                  key={plan.value}
                   type="button"
-                  onClick={() => setMembershipType(plan.value)}
-                  className={`py-3 rounded-xl border transition-all font-medium text-sm ${
-                    membershipType === plan.value 
-                    ? 'bg-cyan-500/10 border-cyan-500/50 text-cyan-400 shadow-lg shadow-cyan-500/10' 
-                    : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:border-white/20'
+                  key={p.value}
+                  onClick={()=>setMembershipType(p.value)}
+                  className={`p-3 md:p-4 rounded-lg md:rounded-xl border transition-all text-sm md:text-base ${
+                    membershipType === p.value 
+                      ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-400 font-bold' 
+                      : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'
                   }`}
                 >
-                  {plan.label}
+                  {p.label}
                 </button>
               ))}
             </div>
           </div>
 
-          <div className="space-y-2">
-            <div className="flex justify-between items-center">
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-widest ml-1">Custom Message (Optional)</label>
-              <span className="text-[10px] text-gray-600">Appended to the registration message</span>
-            </div>
+          <div className="space-y-1.5 md:space-y-2">
+            <label className="text-[10px] md:text-xs font-semibold text-gray-500 uppercase tracking-widest ml-1">Optional Custom Welcome Message</label>
             <textarea 
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-cyan-500/50 focus:bg-white/[0.08] transition-all min-h-[60px] text-sm" 
-              placeholder="Ex. Looking forward to see you tomorrow..." 
-              value={customMessage} 
-              onChange={e=>setCustomMessage(e.target.value)} 
+              rows="3"
+              className="w-full bg-white/5 border border-white/10 rounded-lg md:rounded-xl px-3 md:px-4 py-2.5 md:py-3 text-sm md:text-base outline-none focus:border-cyan-500/50" 
+              placeholder="Add a special note..."
+              value={customMessage}
+              onChange={e=>setCustomMessage(e.target.value)}
             />
-          </div>
-          
-          <div className="pt-4 border-t border-white/5">
-            <button 
-              disabled={loading}
-              className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold py-4 rounded-xl shadow-lg shadow-cyan-500/20 active:scale-[0.98] transition-all disabled:opacity-50"
-            >
-              🚀 {loading ? 'Processing...' : 'Register Athlete & Send Confirmation'}
-            </button>
           </div>
 
           {message && (
-            <div className={`p-4 rounded-2xl text-center text-sm border font-medium ${
-              message.type === 'success' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'
-            }`}>
+            <div className={`p-3 md:p-4 rounded-lg md:rounded-xl text-sm font-medium ${message.type === 'error' ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'}`}>
               {message.text}
             </div>
           )}
+
+          <div className="pt-2 md:pt-4">
+            <button 
+              disabled={loading || durationExceeded()}
+              type="submit" 
+              className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold py-3 md:py-4 rounded-lg md:rounded-xl transition-all disabled:opacity-50 text-sm md:text-base"
+            >
+              {loading ? 'Processing Registration...' : 'Onboard Athlete →'}
+            </button>
+          </div>
         </form>
       </div>
     </div>

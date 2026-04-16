@@ -13,14 +13,17 @@ export default function Login(){
     setError(null)
     setLoading(true)
     try{
-      const apiUrl = import.meta.env.DEV ? import.meta.env.VITE_LOCAL_API_URL : import.meta.env.VITE_PRODUCTION_API_URL;
+      const apiUrl = import.meta.env.DEV ? 'http://localhost:5005/api' : 'https://gym-2-1xb9.onrender.com/api';
       const res = await fetch(`${apiUrl}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
       })
       const data = await res.json()
-      if(!res.ok) return setError(data.message || 'Login failed')
+      if(!res.ok) {
+        setError(data.message || 'Login failed')
+        return
+      }
       setToken(data.token)
     } catch(err){
       setError(err.message)

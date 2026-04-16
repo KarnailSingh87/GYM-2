@@ -6,7 +6,7 @@ function Dashboard(){
   const [error, setError] = useState(null)
 
   const { token } = useContext(AuthContext)
-  const apiUrl = import.meta.env.DEV ? 'http://localhost:5001/api' : 'https://gym-2-1xb9.onrender.com/api';
+  const apiUrl = import.meta.env.DEV ? 'http://localhost:5005/api' : 'https://gym-2-1xb9.onrender.com/api';
   useEffect(()=>{
     if(!token) return
     fetch(`${apiUrl}/members`, { headers: { Authorization: `Bearer ${token}` } })
@@ -26,37 +26,37 @@ function Dashboard(){
   ]
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 md:space-y-8 pb-10">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Overview</h1>
-        <p className="text-gray-400 mt-1">Welcome back, hope you have a productive day.</p>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Overview</h1>
+        <p className="text-sm md:text-base text-gray-400 mt-1">Welcome back, hope you have a productive day.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
         {stats.map((stat, idx) => (
-          <div key={idx} className="glass-card p-6 rounded-2xl relative overflow-hidden group">
+          <div key={idx} className="glass-card p-5 md:p-6 rounded-2xl relative overflow-hidden group">
             <div className={`absolute inset-0 bg-gradient-to-br ${stat.color} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
             <div className="relative z-10">
-              <div className="text-3xl mb-4">{stat.icon}</div>
-              <h3 className="text-sm font-medium text-gray-400 tracking-wider uppercase">{stat.label}</h3>
-              <div className="text-3xl font-bold mt-2 glow-text">{stat.value}</div>
+              <div className="text-2xl md:text-3xl mb-3 md:mb-4">{stat.icon}</div>
+              <h3 className="text-xs md:text-sm font-medium text-gray-400 tracking-wider uppercase">{stat.label}</h3>
+              <div className="text-2xl md:text-3xl font-bold mt-2 glow-text">{stat.value}</div>
             </div>
           </div>
         ))}
       </div>
 
       <div className="glass-card rounded-2xl overflow-hidden">
-        <div className="p-6 border-b border-white/5 flex justify-between items-center">
-          <h3 className="font-semibold text-lg">Recent Registrations</h3>
-          <button className="text-xs text-cyan-400 hover:text-cyan-300 font-medium">View All →</button>
+        <div className="p-4 md:p-6 border-b border-white/5 flex justify-between items-center">
+          <h3 className="font-semibold text-base md:text-lg">Recent Registrations</h3>
+          <button className="text-xs md:text-sm text-cyan-400 hover:text-cyan-300 font-medium">View All →</button>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
+        <div className="overflow-x-auto w-full">
+          <table className="w-full text-left min-w-[500px]">
             <thead>
-              <tr className="text-[11px] uppercase tracking-widest text-gray-500">
-                <th className="px-6 py-4">Name</th>
-                <th className="px-6 py-4">Contact</th>
-                <th className="px-6 py-4">Expiry Status</th>
+              <tr className="text-[10px] md:text-[11px] uppercase tracking-widest text-gray-500">
+                <th className="px-4 md:px-6 py-3 md:py-4">Name</th>
+                <th className="px-4 md:px-6 py-3 md:py-4">Contact</th>
+                <th className="px-4 md:px-6 py-3 md:py-4">Expiry Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
@@ -64,12 +64,12 @@ function Dashboard(){
                 const isActive = new Date(m.expiryDate) > new Date()
                 return (
                   <tr key={m._id} className="hover:bg-white/[0.02] transition-colors group">
-                    <td className="px-6 py-4">
-                      <div className="font-medium text-white group-hover:text-cyan-400 transition-colors">{m.name}</div>
+                    <td className="px-4 md:px-6 py-3 md:py-4 truncate max-w-[150px] md:max-w-none">
+                      <div className="font-medium text-sm md:text-base text-white group-hover:text-cyan-400 transition-colors">{m.name}</div>
                     </td>
-                    <td className="px-6 py-4 text-gray-400">{m.phone}</td>
-                    <td className="px-6 py-4">
-                      <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-tighter ${
+                    <td className="px-4 md:px-6 py-3 md:py-4 text-xs md:text-sm text-gray-400 truncate max-w-[120px] md:max-w-none">{m.phone}</td>
+                    <td className="px-4 md:px-6 py-3 md:py-4">
+                      <span className={`px-2 py-1 rounded-full text-[9px] md:text-[10px] font-bold uppercase tracking-tighter whitespace-nowrap ${
                         isActive ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'
                       }`}>
                         {isActive ? 'Active' : 'Expired'}
@@ -80,7 +80,7 @@ function Dashboard(){
               })}
             </tbody>
           </table>
-          {members.length === 0 && <div className="p-10 text-center text-gray-500">No members found yet.</div>}
+          {members.length === 0 && <div className="p-6 md:p-10 text-center text-sm md:text-base text-gray-500">No members found yet.</div>}
         </div>
       </div>
     </div>

@@ -11,7 +11,7 @@ const app = express()
 app.use(express.json())
 
 const FRONTEND = process.env.FRONTEND_ORIGIN || 'http://localhost:5173'
-app.use(cors({ origin: FRONTEND }))
+app.use(cors())
 
 app.use('/api/auth', authRoutes)
 app.use('/api/members', memberRoutes)
