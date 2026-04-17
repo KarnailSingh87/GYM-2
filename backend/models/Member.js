@@ -6,6 +6,7 @@ const MemberSchema = new mongoose.Schema({
   address: { type: String },
   joinDate: { type: Date, default: Date.now },
   expiryDate: { type: Date },
+  dob: { type: Date },
   membershipType: { type: String, enum: ['monthly','quarterly','sixmonth','yearly','other'], default: 'monthly' },
   timeSlot: { type: String },
   paymentStatus: { type: String, enum: ['paid','pending','overdue','online','cash'], default: 'pending' },

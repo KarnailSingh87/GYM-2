@@ -1,10 +1,13 @@
 import React, { useState, useContext } from 'react'
+import axios from 'axios'
 import { AuthContext } from '../context/AuthContext'
 
-function AddMember({ onNavigate }){
+export default function AddMember({ onNavigate }) {
+  const { token } = useContext(AuthContext)
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
   const [address, setAddress] = useState('')
+  const [dob, setDob] = useState('')
   const [joinDate, setJoinDate] = useState(new Date().toISOString().split('T')[0])
   const [startTime, setStartTime] = useState('06:00')
   const [endTime, setEndTime] = useState('08:00')
@@ -15,8 +18,6 @@ function AddMember({ onNavigate }){
   const [customMessage, setCustomMessage] = useState('')
   const [message, setMessage] = useState(null)
   const [loading, setLoading] = useState(false)
-
-  const { token } = useContext(AuthContext)
 
   const plans = [
     { label: 'Monthly', value: 'monthly' },
@@ -72,6 +73,7 @@ function AddMember({ onNavigate }){
           name, 
           phone, 
           address,
+          dob,
           joinDate,
           timeSlot,
           membershipType,
@@ -138,6 +140,15 @@ function AddMember({ onNavigate }){
                 placeholder="Ex. 123 Main St, Springfield" 
                 value={address} 
                 onChange={e=>setAddress(e.target.value)} 
+              />
+            </div>
+            <div className="space-y-1.5 md:space-y-2">
+              <label className="text-[10px] md:text-xs font-semibold text-gray-500 uppercase tracking-widest ml-1">Date of Birth (Optional)</label>
+              <input 
+                type="date" 
+                className="w-full bg-white/5 border border-white/10 rounded-lg md:rounded-xl px-3 md:px-4 py-2.5 md:py-3 text-sm md:text-base outline-none focus:border-cyan-500/50 focus:bg-white/[0.08]" 
+                value={dob} 
+                onChange={e=>setDob(e.target.value)} 
               />
             </div>
             <div className="space-y-1.5 md:space-y-2">
@@ -254,5 +265,3 @@ function AddMember({ onNavigate }){
     </div>
   )
 }
-
-export default AddMember
