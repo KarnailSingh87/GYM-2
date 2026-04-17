@@ -127,10 +127,12 @@ export default function AddMember({ onNavigate }) {
             <div className="space-y-1.5 md:space-y-2">
               <label className="text-[10px] md:text-xs font-semibold text-gray-500 uppercase tracking-widest ml-1">Phone Number (WhatsApp)</label>
               <input 
+                type="text"
+                maxLength="10"
                 className="w-full bg-white/5 border border-white/10 rounded-lg md:rounded-xl px-3 md:px-4 py-2.5 md:py-3 text-sm md:text-base outline-none focus:border-cyan-500/50 focus:bg-white/[0.08] transition-all" 
-                placeholder="+91 99999 00000" 
+                placeholder="9999900000" 
                 value={phone} 
-                onChange={e=>setPhone(e.target.value)} 
+                onChange={e => setPhone(e.target.value.replace(/\\D/g, '').slice(0, 10))} 
               />
             </div>
             <div className="space-y-1.5 md:space-y-2">
