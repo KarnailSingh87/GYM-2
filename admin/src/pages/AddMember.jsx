@@ -121,7 +121,7 @@ export default function AddMember({ onNavigate }) {
                 className="w-full bg-white/5 border border-white/10 rounded-lg md:rounded-xl px-3 md:px-4 py-2.5 md:py-3 text-sm md:text-base outline-none focus:border-cyan-500/50 focus:bg-white/[0.08] transition-all" 
                 placeholder="Ex. John Wick" 
                 value={name} 
-                onChange={e=>setName(e.target.value)} 
+                onChange={e=>setName(e.target.value.replace(/[^A-Za-z\s]/g, ''))} 
               />
             </div>
             <div className="space-y-1.5 md:space-y-2">
