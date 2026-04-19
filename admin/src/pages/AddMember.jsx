@@ -64,7 +64,10 @@ export default function AddMember({ onNavigate }) {
       return
     }
     setLoading(true)
-    const apiUrl = import.meta.env.DEV ? 'http://localhost:5005/api' : import.meta.env.VITE_API_URL;
+    const host = window.location.hostname;
+    const apiUrl = import.meta.env.DEV 
+      ? `http://${host}:5005/api` 
+      : import.meta.env.VITE_API_URL;
     try {
       const res = await fetch(`${apiUrl}/members`, {
         method: 'POST',

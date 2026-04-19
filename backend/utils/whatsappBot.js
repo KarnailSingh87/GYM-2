@@ -301,16 +301,16 @@ export async function sendText(phone, text){
     if(!sock?.user) {
       console.log('📡 WhatsApp not connected. Attempting to initialize...');
       await initWhatsApp(SESSION_ID);
-      // Wait up to 10s for connection (with progressive checks)
+      // Wait up to 30s for connection (essential for slow Render cold starts)
       let attempts = 0;
-      while(!sock?.user && attempts < 10) {
-        await new Promise(r => setTimeout(r, 1000));
+      while(!sock?.user && attempts < 30) {
         attempts++;
+        await new Promise(r => setTimeout(r, 1000));
       }
     }
     
     if(!sock?.user) {
-      console.error('❌ WhatsApp connection failed after 10 seconds.');
+      console.error('❌ WhatsApp connection failed after 30 seconds.');
       throw new Error('WhatsApp not connected');
     }
 
@@ -320,6 +320,7 @@ export async function sendText(phone, text){
     // Capture current socket reference to avoid sending on a stale socket
     const currentSock = sock;
     if (!currentSock?.user) {
+      console.error('❌ Socket became unavailable before sending.');
       throw new Error('WhatsApp socket became unavailable');
     }
     
