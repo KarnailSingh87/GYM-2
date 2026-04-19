@@ -2,6 +2,7 @@ import { useContext, useState, Suspense, lazy } from 'react'
 import { AuthProvider, AuthContext } from './context/AuthContext'
 import Login from './components/Login'
 import Sidebar from './components/Sidebar'
+import ErrorBoundary from './components/ErrorBoundary'
 import './index.css'
 
 // Fast Lazy Loading for splitting code bundles
@@ -73,13 +74,15 @@ function AppInner(){
         
         <div className="flex-1 p-4 md:p-8 w-full max-w-full overflow-x-hidden">
           <div className="max-w-7xl mx-auto w-full">
-            <Suspense fallback={<SectionLoader />}>
-              {view === 'dashboard' && <Dashboard />}
-              {view === 'add' && <AddMember onNavigate={setView} />}
-              {view === 'members' && <MemberTable />}
-              {view === 'broadcast' && <Broadcast />}
-              {view === 'settings' && <Settings />}
-            </Suspense>
+            <ErrorBoundary>
+              <Suspense fallback={<SectionLoader />}>
+                {view === 'dashboard' && <Dashboard />}
+                {view === 'add' && <AddMember onNavigate={setView} />}
+                {view === 'members' && <MemberTable />}
+                {view === 'broadcast' && <Broadcast />}
+                {view === 'settings' && <Settings />}
+              </Suspense>
+            </ErrorBoundary>
           </div>
         </div>
       </div>

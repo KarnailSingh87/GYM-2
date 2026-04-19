@@ -39,4 +39,28 @@ app.use('/api/whatsapp', whatsappRoutes)
 
 app.get('/api/ping', (req, res) => res.json({ pong: true }))
 
+// 404 Not Found Handler
+app.use((req, res) => {
+  res.status(404).json({ message: 'Resource not found' });
+});
+
+// GLOBAL ERROR HANDLER - Prevents app crash and sends consistent errors
+app.use((err, req, res, next) => {
+  console.error('🔥 Server Error:', err.stack);
+  res.status(err.status || 500).json({
+    message: err.message || 'Internal Server Error',
+    error: process.env.NODE_ENV === 'development' ? err : {}
+  });
+});
+
+// CRITICAL: Prevent process crash on unhandled background errors
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('😱 Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('💀 Uncaught Exception:', error);
+  // Optional: Graceful shutdown if needed, but for gym use, let node-cron/nodemon handle restart
+});
+
 export default app
