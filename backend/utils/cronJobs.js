@@ -126,4 +126,22 @@ export function startCronJobs() {
       console.error('Error in Pending Fees cron job:', err);
     }
   });
+
+  // Self-ping to keep Render free tier alive (every 10 minutes)
+  // This ensures the WhatsApp connection remains permanent and doesn't time out
+  cron.schedule('*/10 * * * *', async () => {
+    try {
+      const selfUrl = process.env.RENDER_EXTERNAL_URL || process.env.BACKEND_URL || 'http://localhost:5005';
+      console.log(`📡 [Keep-Alive] Self-pinging to stay awake: ${selfUrl}`);
+      
+      const response = await fetch(`${selfUrl}/api/ping`).catch(() => null);
+      if (response && response.ok) {
+        console.log('✅ [Keep-Alive] Successfully pinged backend. Connection stable.');
+      } else {
+        console.warn('⚠️ [Keep-Alive] Self-ping failed or returned non-ok status.');
+      }
+    } catch (e) {
+      console.error('❌ [Keep-Alive] Error during self-ping:', e.message);
+    }
+  });
 }

@@ -18,7 +18,7 @@ let waState = { status: 'INITIALIZING', qr: null, user: null };
 const SESSION_ID = process.env.WA_SESSION_ID || 'rfc_gym_session';
 
 // Reconnection management
-const MAX_RECONNECT_ATTEMPTS = 500; // Try forever (approx 4 hours of total downtime)
+const MAX_RECONNECT_ATTEMPTS = 10000; // Effectively forever
 let reconnectAttempts = 0;
 let reconnectTimer = null;
 
@@ -246,9 +246,10 @@ export async function initWhatsApp(sessionId = SESSION_ID, force = false){
             { data: credsData },
             { upsert: true }
           );
+          console.log('☁️ [Sync] Credentials synchronized to MongoDB.');
         }
       } catch (err) {
-        console.error('Failed to sync creds to Mongo', err);
+        console.error('❌ [Sync] Failed to sync creds to Mongo:', err.message);
       }
     });
 

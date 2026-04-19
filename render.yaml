@@ -21,6 +21,8 @@ services:
         value: K@rnail0011
       - key: JWT_SECRET
         generateValue: true
+      - key: BACKEND_URL
+        value: https://gym-2-1xb9.onrender.com
 
   # Admin Frontend (Static Site)
   - type: web
