@@ -135,11 +135,11 @@ export default function AddMember({ onNavigate }) {
               <label className="text-[10px] md:text-xs font-semibold text-gray-500 uppercase tracking-widest ml-1">Phone Number (WhatsApp)</label>
               <input 
                 type="tel" pattern="[0-9]*"
-                maxLength="10"
+                maxLength="12"
                 className="w-full bg-white/5 border border-white/10 rounded-lg md:rounded-xl px-3 md:px-4 py-2.5 md:py-3 text-sm md:text-base outline-none focus:border-cyan-500/50 focus:bg-white/[0.08] transition-all" 
-                placeholder="+91 0000000000" 
+                placeholder="Ex. 9876543210 or 919876543210" 
                 value={phone} 
-                onChange={e => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))} 
+                onChange={e => setPhone(e.target.value.replace(/\D/g, '').slice(0, 12))} 
               />
             </div>
             <div className="space-y-1.5 md:space-y-2">

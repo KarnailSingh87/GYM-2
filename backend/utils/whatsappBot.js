@@ -261,8 +261,37 @@ export async function initWhatsApp(sessionId = SESSION_ID, force = false){
 
 function formatPhoneForBaileys(phone){
   let cleaned = phone.replace(/[^0-9]/g, '');
-  // If it's a 10 digit Indian number without country code, add 91
-  if (cleaned.length === 10) cleaned = '91' + cleaned;
+  
+  // 1. Remove leading 0 if present (e.g. 09876543210 -> 9876543210)
+  if (cleaned.length === 11 && cleaned.startsWith('0')) {
+    cleaned = cleaned.substring(1);
+  }
+
+  // 2. Fix double country code (e.g. 91919876543210 -> 919876543210)
+  if (cleaned.startsWith('9191')) {
+    cleaned = cleaned.substring(2);
+  }
+  
+  // 3. If it's 12 digits and starts with 91, it's correct.
+  if (cleaned.length === 12 && cleaned.startsWith('91')) {
+    return cleaned;
+  }
+
+  // 4. If it's 10 digits starting with 91, it's a truncated number (e.g. 9198765432)
+  // This was caused by the previous UI's 10-char limit being applied to numbers including '91'
+  if (cleaned.length === 10 && cleaned.startsWith('91')) {
+    console.warn(`⚠️ Warning: Phone number ${phone} seems truncated (matches 10 digits starting with 91). It might not work.`);
+    // We can't perfectly repair truncation, but we don't want to add ANOTHER 91.
+    // However, Baileys needs a full JID. 10 digits isn't a full Indian JID.
+    // We'll return it as is + '91' which is still wrong but let Baileys try.
+    return '91' + cleaned;
+  }
+
+  // 5. If it's 10 digits, assume India and prepend 91
+  if (cleaned.length === 10) {
+    cleaned = '91' + cleaned;
+  }
+  
   return cleaned;
 }
 
@@ -294,16 +323,17 @@ export async function sendText(phone, text){
       throw new Error('WhatsApp socket became unavailable');
     }
     
+    console.log(`📝 Message Content: "${text.substring(0, 50)}..."`);
     await currentSock.sendMessage(jid, { text });
-    console.log('✅ Message sent successfully!');
+    console.log(`✅ Message successfully delivered to ${jid}`);
     return true;
   } catch(err){
-    console.error('❌ sendText error:', err.message);
+    console.error('❌ sendText error detailed:', err);
     return false;
   }
 }
 
-export async function sendWelcome(phone, { name, joinDate, expiryDate, timeSlot, paymentStatus, amountReceived, address }){
+export async function sendWelcome(phone, { name, joinDate, expiryDate, timeSlot, paymentStatus, amountReceived, address, customMessage }){
   const start = new Date(joinDate).toLocaleDateString();
   const end = new Date(expiryDate).toLocaleDateString();
   
@@ -315,6 +345,13 @@ export async function sendWelcome(phone, { name, joinDate, expiryDate, timeSlot,
     paymentText += ` (₹${amountReceived})`;
   }
 
-  const text = `🔥 *WELCOME TO RFC GYM* 🔥\n\nHello *${name}*,\n\nWelcome to the family! Your registration is complete. Here are your details:\n\n*Address:* ${address || 'Not Provided'}\n*Joining Date:* ${start}\n*Expiry Date:* ${end}\n*Time Slot:* ${timeSlot || 'Anytime'}\n*Payment Status:* ${paymentText}\n\nWe are excited to see you crush your goals at *RFC Gym*! 💪\n\n_Stay Fit, Stay Strong!_`;
+  let text = `🔥 *WELCOME TO RFC GYM* 🔥\n\nHello *${name}*,\n\nWelcome to the family! Your registration is complete. Here are your details:\n\n*Address:* ${address || 'Not Provided'}\n*Joining Date:* ${start}\n*Expiry Date:* ${end}\n*Time Slot:* ${timeSlot || 'Anytime'}\n*Payment Status:* ${paymentText}\n\nWe are excited to see you crush your goals at *RFC Gym*! 💪`;
+
+  if (customMessage && customMessage.trim()) {
+    text += `\n\n*Message from Owner:* ${customMessage.trim()}`;
+  }
+
+  text += `\n\n_Stay Fit, Stay Strong!_`;
+  
   return sendText(phone, text);
 }

@@ -56,19 +56,31 @@ router.post('/broadcast', requireAuth, async (req, res) => {
       let successCount = 0;
       let failCount = 0;
       
+      console.log(`🚀 Starting broadcast to ${activeMembers.length} members...`);
+      
       for (const member of activeMembers) {
-        if (!member.phone) continue;
+        if (!member.phone) {
+          console.log(`⏩ Skipping member ${member.name}: No phone number provided.`);
+          continue;
+        }
         
         try {
+          console.log(`➡️ Sending broadcast to: ${member.name} (${member.phone})`);
           const formattedMsg = `🔔 *RFC GYM ANNOUNCEMENT* 🔔\n\nHi *${member.name}*,\n\n${message}\n\n_Stay Fit, Stay Strong! 💪_`;
           const result = await sendText(member.phone, formattedMsg);
-          if (result) successCount++;
-          else failCount++;
+          
+          if (result) {
+            successCount++;
+            console.log(`✅ Success: ${member.name}`);
+          } else {
+            failCount++;
+            console.log(`❌ Failed: ${member.name} - Check if WhatsApp is connected or number is valid.`);
+          }
           
           // Small delay to avoid WhatsApp rate limits
           await new Promise(r => setTimeout(r, 2000));
         } catch (err) {
-          console.error(`Failed to send broadcast to ${member.name}:`, err);
+          console.error(`❌ Critical error for ${member.name}:`, err.message);
           failCount++;
         }
       }

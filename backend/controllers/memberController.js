@@ -39,7 +39,8 @@ export async function createMember(req, res){
       timeSlot, 
       paymentStatus: paymentStatus || 'pending',
       amountReceived: amountReceived || 0,
-      address
+      address,
+      customMessage // Pass the custom message to the welcome function
     }).catch(err => console.error('Welcome send failed', err));
 
     res.status(201).json({ member, messageSent: true });
