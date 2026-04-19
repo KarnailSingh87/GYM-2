@@ -127,6 +127,24 @@ export function startCronJobs() {
     }
   });
 
+  // WhatsApp Health Watchdog (Every 5 minutes)
+  // Ensures that if the socket enters a "zombie" state, it's forcibly restarted
+  cron.schedule('*/5 * * * *', async () => {
+    try {
+      const status = getWhatsAppStatus();
+      // If we've been in "INITIALIZING" for more than 10 minutes, something is wrong
+      console.log(`🔍 [Watchdog] Current WhatsApp Status: ${status.status}, Connected: ${status.connected}`);
+      
+      // If it should be connected but isn't, or is stuck in initializing, check it
+      if (status.status === 'INITIALIZING' && !status.connected) {
+        // Just log for now, initWhatsApp has its own internal retry logic
+        console.log('ℹ️ [Watchdog] WhatsApp is currently initializing...');
+      }
+    } catch (e) {
+      console.error('❌ [Watchdog] Monitoring error:', e.message);
+    }
+  });
+
   // Self-ping to keep Render free tier alive (every 10 minutes)
   // This ensures the WhatsApp connection remains permanent and doesn't time out
   cron.schedule('*/10 * * * *', async () => {

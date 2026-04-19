@@ -166,16 +166,20 @@ export async function initWhatsApp(sessionId = SESSION_ID, force = false){
     sock = makeWASocket({ 
       auth: {
         creds: state.creds,
-        /** Use makeCacheableSignalKeyStore for better performance and fewer I/O ops */
         keys: makeCacheableSignalKeyStore(state.keys, logger)
       }, 
       logger, 
       version,
       printQRInTerminal: false,
       browser: ['RFC Gym Admin', 'Chrome', '4.0.0'],
-      // Prevent Baileys from retrying messages indefinitely
-      retryRequestDelayMs: 250,
-      connectTimeoutMs: 30_000,
+      // CRITICAL: Disable history sync to keep memory usage low (prevents Render crashes)
+      syncFullHistory: false,
+      shouldSyncHistoryMessage: () => false,
+      // Aggressive keep-alive
+      keepAliveIntervalMs: 15_000,
+      retryRequestDelayMs: 500,
+      connectTimeoutMs: 60_000,
+      defaultQueryTimeoutMs: 0, // no timeout
     });
 
     // Store the sessionId in a closure-safe way for this socket instance
