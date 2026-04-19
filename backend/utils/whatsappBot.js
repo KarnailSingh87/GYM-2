@@ -18,7 +18,7 @@ let waState = { status: 'INITIALIZING', qr: null, user: null };
 const SESSION_ID = process.env.WA_SESSION_ID || 'rfc_gym_session';
 
 // Reconnection management
-const MAX_RECONNECT_ATTEMPTS = 5;
+const MAX_RECONNECT_ATTEMPTS = 500; // Try forever (approx 4 hours of total downtime)
 let reconnectAttempts = 0;
 let reconnectTimer = null;
 
@@ -209,9 +209,9 @@ export async function initWhatsApp(sessionId = SESSION_ID, force = false){
             return;
           }
           
-          // Exponential backoff: 2s, 4s, 8s, 16s, 32s
-          const delay = Math.min(2000 * Math.pow(2, reconnectAttempts - 1), 32000);
-          console.log(`🔄 Reconnecting in ${delay / 1000}s (attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})...`);
+          // Exponential backoff: 2s, 4s, 8s, 16s, 32s + random jitter
+          const delay = Math.min(2000 * Math.pow(2, reconnectAttempts - 1), 32000) + (Math.random() * 2000);
+          console.log(`🔄 [${SESSION_ID}] Reconnecting in ${Math.round(delay / 1000)}s (attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})...`);
           
           if (reconnectTimer) clearTimeout(reconnectTimer);
           reconnectTimer = setTimeout(() => {
