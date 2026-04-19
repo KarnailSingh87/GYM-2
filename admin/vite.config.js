@@ -6,5 +6,18 @@ export default defineConfig({
   base: '/',
   server: {
     port: 5173
+  },
+  build: {
+    target: 'esnext', // Modern browsers, less polyfill weight
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          recharts: ['recharts'],
+          icons: ['lucide-react']
+        }
+      }
+    },
+    chunkSizeWarningLimit: 1000,
   }
 })

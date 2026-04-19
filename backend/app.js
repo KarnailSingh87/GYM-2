@@ -1,6 +1,8 @@
 import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
+import helmet from 'helmet'
+import rateLimit from 'express-rate-limit'
 import authRoutes from './routes/auth.js'
 import memberRoutes from './routes/members.js'
 import whatsappRoutes from './routes/whatsapp.js'
@@ -8,6 +10,19 @@ import whatsappRoutes from './routes/whatsapp.js'
 dotenv.config()
 
 const app = express()
+
+// Security Middleware
+app.use(helmet())
+
+// Rate limiting (Basic DDoS and brute force protection)
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 200, // limit each IP to 200 requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
+})
+app.use('/api', limiter)
+
 app.use(express.json())
 
 const FRONTEND = process.env.FRONTEND_ORIGIN || 'http://localhost:5173'

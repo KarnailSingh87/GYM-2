@@ -1,13 +1,22 @@
-import { useContext, useState } from 'react'
+import { useContext, useState, Suspense, lazy } from 'react'
 import { AuthProvider, AuthContext } from './context/AuthContext'
 import Login from './components/Login'
 import Sidebar from './components/Sidebar'
-import AddMember from './pages/AddMember'
-import Dashboard from './pages/Dashboard'
-import MemberTable from './components/MemberTable'
-import Settings from './pages/Settings'
-import Broadcast from './pages/Broadcast'
 import './index.css'
+
+// Fast Lazy Loading for splitting code bundles
+const AddMember = lazy(() => import('./pages/AddMember'))
+const Dashboard = lazy(() => import('./pages/Dashboard'))
+const MemberTable = lazy(() => import('./components/MemberTable'))
+const Settings = lazy(() => import('./pages/Settings'))
+const Broadcast = lazy(() => import('./pages/Broadcast'))
+
+// Loading Fallback
+const SectionLoader = () => (
+  <div className="flex items-center justify-center p-12 text-cyan-400">
+    <div className="w-8 h-8 border-4 border-current border-t-transparent rounded-full animate-spin"></div>
+  </div>
+)
 
 function AppInner(){
   const { token } = useContext(AuthContext)
@@ -64,11 +73,13 @@ function AppInner(){
         
         <div className="flex-1 p-4 md:p-8 w-full max-w-full overflow-x-hidden">
           <div className="max-w-7xl mx-auto w-full">
-            {view === 'dashboard' && <Dashboard />}
-            {view === 'add' && <AddMember onNavigate={setView} />}
-            {view === 'members' && <MemberTable />}
-            {view === 'broadcast' && <Broadcast />}
-            {view === 'settings' && <Settings />}
+            <Suspense fallback={<SectionLoader />}>
+              {view === 'dashboard' && <Dashboard />}
+              {view === 'add' && <AddMember onNavigate={setView} />}
+              {view === 'members' && <MemberTable />}
+              {view === 'broadcast' && <Broadcast />}
+              {view === 'settings' && <Settings />}
+            </Suspense>
           </div>
         </div>
       </div>
