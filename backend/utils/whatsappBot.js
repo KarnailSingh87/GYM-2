@@ -153,6 +153,14 @@ export async function initWhatsApp(sessionId = SESSION_ID, force = false){
         console.warn('⚠️ Session wipe in-progress or failed:', e.message);
       }
     }
+    
+    // ALSO WIPE CLOUD STATE on force-init to prevent polluted credentials
+    try {
+      await WAState.deleteOne({ id: sessionId });
+      console.log('☁️ Cloud session state cleared for a fresh start.');
+    } catch (e) {
+      // Ignore errors
+    }
   }
 
   // Already connected and not forcing
@@ -199,7 +207,7 @@ export async function initWhatsApp(sessionId = SESSION_ID, force = false){
       logger, 
       version,
       printQRInTerminal: false,
-      browser: ['Mac OS', 'Chrome', '121.0.6167.85'],
+      browser: ['Chrome (MacOS)', 'Chrome', '121.0.6167.85'],
       syncFullHistory: false,
       shouldSyncHistoryMessage: () => false,
       keepAliveIntervalMs: 15_000,
@@ -219,6 +227,9 @@ export async function initWhatsApp(sessionId = SESSION_ID, force = false){
             waState = { ...waState, status: 'PAIRING_CODE_READY', pairingCode: code };
             console.log(`🔢 Pairing Code generated: ${code}`);
             logWAEvent('PAIRING_CODE', `Generated for ${config.pairingPhone}`);
+            
+            // Explicitly save the initial pairing state to disk/cloud immediately
+            await saveCreds();
           } catch (err) {
             console.error('❌ Failed to generate pairing code:', err.message);
             logWAEvent('PAIRING_ERROR', err.message);
