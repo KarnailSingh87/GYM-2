@@ -40,6 +40,14 @@ export async function logoutWhatsApp() {
       sock = null;
     }
 
+    // CLOUD SYNC: Remove the saved session from MongoDB so it doesn't restore bad credentials
+    try {
+      await WAState.deleteOne({ id: SESSION_ID });
+      console.log('☁️ Removed WhatsApp session from MongoDB.');
+    } catch (e) {
+      console.error('Failed to remove from Mongo', e);
+    }
+
     const sessionsDir = path.resolve(process.cwd(), 'sessions');
     if (fs.existsSync(sessionsDir)) {
       try {
@@ -49,6 +57,11 @@ export async function logoutWhatsApp() {
       }
     }
     
+    // Automatically trigger a new QR generation after wiping old data
+    setTimeout(() => {
+      initWhatsApp(SESSION_ID, true);
+    }, 2000);
+
     return true;
   } catch (err) {
     console.error('Critical Logout error', err);
