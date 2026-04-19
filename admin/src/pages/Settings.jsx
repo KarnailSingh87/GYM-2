@@ -7,7 +7,10 @@ export default function Settings() {
   const [loading, setLoading] = useState(true);
   const [logoutLoading, setLogoutLoading] = useState(false);
 
-  const apiUrl = import.meta.env.DEV ? 'http://localhost:5005/api' : import.meta.env.VITE_API_URL;
+  const host = window.location.hostname;
+  const apiUrl = import.meta.env.DEV 
+    ? `http://${host}:5005/api` 
+    : import.meta.env.VITE_API_URL;
   async function fetchStatus() {
     try {
       const res = await fetch(`${apiUrl}/whatsapp/status`, {
