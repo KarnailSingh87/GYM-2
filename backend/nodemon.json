@@ -1,6 +1,8 @@
 {
   "ignore": [
+    "sessions",
     "sessions/*",
+    "sessions/**",
     "node_modules",
     "*.test.js",
     "fixtures/*"

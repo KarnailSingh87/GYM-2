@@ -48,7 +48,7 @@ export async function logoutWhatsApp() {
       console.error('Failed to remove from Mongo', e);
     }
 
-    const sessionsDir = path.resolve(process.cwd(), 'sessions');
+    const sessionsDir = path.resolve(process.cwd(), 'sessions', SESSION_ID);
     if (fs.existsSync(sessionsDir)) {
       try {
         fs.rmSync(sessionsDir, { recursive: true, force: true });
