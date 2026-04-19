@@ -89,7 +89,7 @@ export function startCronJobs() {
           
           if (mMonthDay === monthDay) {
             bdays++;
-            const msg = `Happy Birthday *${member.name}*! 🎉🎂\n\nWishing you a fantastic day filled with joy and gains! 💪\n\n_From your family at RFC Gym_`;
+            const msg = `🎉 *HAPPY BIRTHDAY ${member.name.toUpperCase()}!* 🎂\n\nOn behalf of the entire team at *RFC Gym*, we wish you a fantastic day filled with joy, health, and massive gains! 💪🔥\n\nKeep pushing your limits and stay legendary! 🏋️‍♂️✨\n\n_Stay Fit, Stay Strong!_`;
             await sendText(member.phone, msg);
             await new Promise(r => setTimeout(r, 2000));
           }
