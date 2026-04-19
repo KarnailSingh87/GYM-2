@@ -207,7 +207,7 @@ export async function initWhatsApp(sessionId = SESSION_ID, force = false){
       logger, 
       version,
       printQRInTerminal: false,
-      browser: ['Chrome (MacOS)', 'Chrome', '121.0.6167.85'],
+      browser: ['Chrome (Linux)', '', ''],
       syncFullHistory: false,
       shouldSyncHistoryMessage: () => false,
       keepAliveIntervalMs: 15_000,
@@ -216,27 +216,7 @@ export async function initWhatsApp(sessionId = SESSION_ID, force = false){
       defaultQueryTimeoutMs: 0, 
     });
 
-    // Handle Pairing Code if requested
-    if (connectionMethod === 'pairing' && !sock.authState.creds.registered) {
-      if (config.pairingPhone) {
-        console.log(`📲 Requesting pairing code for ${config.pairingPhone}...`);
-        setTimeout(async () => {
-          try {
-            const cleanPhone = config.pairingPhone.replace(/\D/g, '');
-            const code = await sock.requestPairingCode(cleanPhone);
-            waState = { ...waState, status: 'PAIRING_CODE_READY', pairingCode: code };
-            console.log(`🔢 Pairing Code generated: ${code}`);
-            logWAEvent('PAIRING_CODE', `Generated for ${config.pairingPhone}`);
-            
-            // Explicitly save the initial pairing state to disk/cloud immediately
-            await saveCreds();
-          } catch (err) {
-            console.error('❌ Failed to generate pairing code:', err.message);
-            logWAEvent('PAIRING_ERROR', err.message);
-          }
-        }, 3000); // Small delay to ensure socket is ready
-      }
-    }
+    // Automatic Pairing is removed here; we will use a dedicated endpoint instead
 
     // Store the sessionId in a closure-safe way for this socket instance
     const currentSock = sock;
@@ -424,4 +404,47 @@ export async function sendWelcome(phone, { name, joinDate, expiryDate, timeSlot,
   text += `\n\n_Stay Fit, Stay Strong!_`;
   
   return sendText(phone, text);
+}
+
+/**
+ * Manually request a pairing code.
+ * This is more stable than requesting on init because we can ensure
+ * the socket event listeners are already registered.
+ */
+export async function requestPairingCodeManual(phone) {
+  try {
+    // If socket is connected or already registered, we can't pairing
+    if (sock?.authState?.creds?.registered) {
+      throw new Error('Device already registered. Logout first.');
+    }
+
+    if (!sock) {
+      await initWhatsApp(SESSION_ID, true);
+      // Wait for socket to initialize filesystem
+      await new Promise(r => setTimeout(r, 4000));
+    }
+
+    const cleanPhone = phone.replace(/\D/g, '');
+    console.log(`📲 [Manual] Requesting pairing code for ${cleanPhone}...`);
+    
+    // We must call it on the active socket
+    const code = await sock.requestPairingCode(cleanPhone);
+    
+    // Update state so UI can see it
+    waState = { ...waState, status: 'PAIRING_CODE_READY', pairingCode: code };
+    
+    // Trigger immediate credential sync to persist the pairing handshake
+    if (sock.ev) {
+       // We can't easily trigger the 'creds.update' event manually, 
+       // but we know Baileys updates them internally after requestPairingCode.
+       // We'll trust Baileys' internal event loop here.
+    }
+
+    logWAEvent('PAIRING_CODE', `Manual request for ${cleanPhone}`);
+    return { success: true, code };
+  } catch (err) {
+    console.error('❌ Manual pairing request failed:', err.message);
+    logWAEvent('PAIRING_ERROR', `Manual request failed: ${err.message}`);
+    return { success: false, message: err.message };
+  }
 }

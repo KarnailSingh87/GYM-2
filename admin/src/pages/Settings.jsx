@@ -101,6 +101,48 @@ export default function Settings() {
     }
   }
 
+  async function handleGetPairingCode() {
+    if(!pairingPhone) return alert('Please enter phone number first.');
+    setSaveLoading(true);
+    try {
+      // Step 1: Tell backend we chose pairing method
+      await fetch(`${apiUrl}/whatsapp/config`, {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          connectionMethod: 'pairing',
+          pairingPhone: pairingPhone,
+          businessApi: businessApi
+        })
+      });
+
+      // Step 2: Request the code manually
+      const res = await fetch(`${apiUrl}/whatsapp/request-pairing`, {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ phone: pairingPhone })
+      });
+      const data = await res.json();
+      
+      if (data.success) {
+        fetchStatus();
+      } else {
+        alert('Could not generate code: ' + data.message);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error requesting pairing code.');
+    } finally {
+      setSaveLoading(false);
+    }
+  }
+
   async function handleVerifyBusiness() {
     setSaveLoading(true);
     try {
@@ -286,11 +328,11 @@ export default function Settings() {
                          onChange={(e) => setPairingPhone(e.target.value.replace(/\D/g, ''))}
                        />
                        <button 
-                        onClick={() => handleSaveConfig('pairing')}
+                        onClick={handleGetPairingCode}
                         disabled={saveLoading}
-                        className="w-full py-3 bg-cyan-500 text-white rounded-xl font-bold shadow-lg shadow-cyan-500/20"
+                        className="w-full py-3 bg-cyan-500 text-white rounded-xl font-bold shadow-lg shadow-cyan-500/20 disabled:opacity-50"
                        >
-                         {status?.status === 'PAIRING_CODE_READY' ? 'Regenerate New Code' : 'Get Pairing Code'}
+                         {saveLoading ? 'Generating...' : (status?.status === 'PAIRING_CODE_READY' ? 'Regenerate New Code' : 'Get Pairing Code')}
                        </button>
                     </div>
                   )}

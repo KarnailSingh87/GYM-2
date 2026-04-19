@@ -1,6 +1,6 @@
 import express from 'express';
 import { requireAuth } from '../middleware/auth.js';
-import { getWhatsAppStatus, logoutWhatsApp, initWhatsApp, sendText } from '../utils/whatsappBot.js';
+import { getWhatsAppStatus, logoutWhatsApp, initWhatsApp, sendText, requestPairingCodeManual } from '../utils/whatsappBot.js';
 import Member from '../models/Member.js';
 import WALog from '../models/WALog.js';
 import WAConfig from '../models/WAConfig.js';
@@ -70,6 +70,22 @@ router.post('/verify-business', requireAuth, async (req, res) => {
     res.json(result);
   } catch (err) {
     res.status(500).json({ success: false, message: 'Verification failed due to server error.' });
+  }
+});
+
+router.post('/request-pairing', requireAuth, async (req, res) => {
+  try {
+    const { phone } = req.body;
+    if (!phone) return res.status(400).json({ success: false, message: 'Phone number is required' });
+    
+    const result = await requestPairingCodeManual(phone);
+    if (result.success) {
+      res.json(result);
+    } else {
+      res.status(500).json(result);
+    }
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Server error during pairing request' });
   }
 });
 
