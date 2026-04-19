@@ -57,10 +57,10 @@ export async function logoutWhatsApp() {
       }
     }
     
-    // Automatically trigger a new QR generation after wiping old data
+    // Auto initiate a completely fresh unlinked session to immediately bring up a QR Code
     setTimeout(() => {
       initWhatsApp(SESSION_ID, true);
-    }, 2000);
+    }, 1000);
 
     return true;
   } catch (err) {
@@ -72,7 +72,10 @@ export async function logoutWhatsApp() {
 export async function initWhatsApp(sessionId = SESSION_ID, force = false){
   if (force) {
     if (sock) {
-      try { sock.end(); } catch(e) {}
+      try { 
+        sock.ev.removeAllListeners();
+        sock.end(); 
+      } catch(e) {}
     }
     sock = null;
     isInitializing = false;
