@@ -244,7 +244,7 @@ function Dashboard(){
               <tr className="text-[10px] md:text-[11px] uppercase tracking-widest text-gray-500">
                 <th className="px-4 md:px-6 py-3 md:py-4">Name</th>
                 <th className="px-4 md:px-6 py-3 md:py-4">Contact</th>
-                <th className="px-4 md:px-6 py-3 md:py-4">Expiry Status</th>
+                <th className="px-4 md:px-6 py-3 md:py-4 hidden md:table-cell">Expiry Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
@@ -256,7 +256,7 @@ function Dashboard(){
                       <div className="font-medium text-sm md:text-base text-white group-hover:text-cyan-400 transition-colors">{m.name}</div>
                     </td>
                     <td className="px-4 md:px-6 py-3 md:py-4 text-xs md:text-sm text-gray-400 truncate max-w-[120px] md:max-w-none">{m.phone}</td>
-                    <td className="px-4 md:px-6 py-3 md:py-4">
+                    <td className="px-4 md:px-6 py-3 md:py-4 hidden md:table-cell">
                       <span className={`px-2 py-1 rounded-full text-[9px] md:text-[10px] font-bold uppercase tracking-tighter whitespace-nowrap ${
                         isActive ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'
                       }`}>
