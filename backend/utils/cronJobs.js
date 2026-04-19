@@ -1,165 +1,155 @@
 import cron from 'node-cron';
 import Member from '../models/Member.js';
-import { sendText, getWhatsAppStatus } from './whatsappBot.js';
+import { sendText, getWhatsAppStatus, runWatchdog } from './whatsappBot.js';
 
 export function startCronJobs() {
-  console.log('⏰ Starting background cron jobs...');
+  console.log('⏰ [Cron] Starting background cron jobs…');
 
-  // Running every day at 10:00 AM for Expiry Alerts
+  // ─────────────────────────────────────────────
+  //  Daily Expiry Alerts — 10:00 AM every day
+  // ─────────────────────────────────────────────
   cron.schedule('0 10 * * *', async () => {
-    console.log('🔄 Running daily Expiry Alerts check...');
+    console.log('🔄 [Cron] Running daily Expiry Alerts…');
     const status = getWhatsAppStatus();
     if (!status.connected) {
-      console.log('⚠️ WhatsApp not connected. Skipping expiry alerts.');
+      console.log('⚠️ [Cron] WhatsApp not connected — skipping expiry alerts.');
       return;
     }
 
     try {
       const today = new Date();
-      
-      // Look for members expiring in exactly 3 days
-      const targetDate3Days = new Date(today);
-      targetDate3Days.setDate(targetDate3Days.getDate() + 3);
-      targetDate3Days.setHours(0, 0, 0, 0);
 
-      const targetEnd3Days = new Date(targetDate3Days);
-      targetEnd3Days.setHours(23, 59, 59, 999);
+      // Members expiring in exactly 3 days
+      const t3Start = new Date(today); t3Start.setDate(t3Start.getDate() + 3); t3Start.setHours(0, 0, 0, 0);
+      const t3End   = new Date(t3Start); t3End.setHours(23, 59, 59, 999);
+      const exp3 = await Member.find({ expiryDate: { $gte: t3Start, $lte: t3End } });
+      console.log(`[Cron] ${exp3.length} members expiring in 3 days.`);
 
-      const expiringMembers3Days = await Member.find({
-        expiryDate: { $gte: targetDate3Days, $lte: targetEnd3Days }
-      });
-
-      console.log(`Found ${expiringMembers3Days.length} members expiring in 3 days.`);
-
-      for (const member of expiringMembers3Days) {
-        if (!member.phone) continue;
-        const msg = `Hi *${member.name}*,\n\nFriendly reminder: Your RFC Gym membership expires in *3 days* (on ${new Date(member.expiryDate).toLocaleDateString()}). ⏳\n\nPlease renew now to keep crushing your goals! 💪\n\n_Stay Fit, Stay Strong!_`;
-        await sendText(member.phone, msg);
-        // Small delay to avoid WhatsApp rate limits
+      for (const m of exp3) {
+        if (!m.phone) continue;
+        const msg = `Hi *${m.name}*,\n\nFriendly reminder: Your RFC Gym membership expires in *3 days* (on ${new Date(m.expiryDate).toLocaleDateString('en-IN')}). ⏳\n\nPlease renew now to keep crushing your goals! 💪\n\n_Stay Fit, Stay Strong!_`;
+        await sendText(m.phone, msg);
         await new Promise(r => setTimeout(r, 2000));
       }
 
-      // Look for members expiring today
-      const targetDateToday = new Date(today);
-      targetDateToday.setHours(0, 0, 0, 0);
+      // Members expiring today
+      const todayStart = new Date(today); todayStart.setHours(0, 0, 0, 0);
+      const todayEnd   = new Date(todayStart); todayEnd.setHours(23, 59, 59, 999);
+      const expToday = await Member.find({ expiryDate: { $gte: todayStart, $lte: todayEnd } });
+      console.log(`[Cron] ${expToday.length} members expiring today.`);
 
-      const targetEndToday = new Date(targetDateToday);
-      targetEndToday.setHours(23, 59, 59, 999);
-
-      const expiringMembersToday = await Member.find({
-        expiryDate: { $gte: targetDateToday, $lte: targetEndToday }
-      });
-
-      console.log(`Found ${expiringMembersToday.length} members expiring today.`);
-
-      for (const member of expiringMembersToday) {
-        if (!member.phone) continue;
-        const msg = `Hi *${member.name}*,\n\nGentle reminder: Your RFC Gym membership expires *today*. ⌛\n\nPlease renew now so your fitness journey is not interrupted! 💪\n\n_Stay Fit, Stay Strong!_`;
-        await sendText(member.phone, msg);
+      for (const m of expToday) {
+        if (!m.phone) continue;
+        const msg = `Hi *${m.name}*,\n\nGentle reminder: Your RFC Gym membership expires *today*. ⌛\n\nPlease renew now so your fitness journey is not interrupted! 💪\n\n_Stay Fit, Stay Strong!_`;
+        await sendText(m.phone, msg);
         await new Promise(r => setTimeout(r, 2000));
       }
-
     } catch (err) {
-      console.error('Error in Expiry Alerts cron job:', err);
+      console.error('[Cron] Expiry Alerts error:', err);
     }
   });
 
-  // Running every morning at 09:00 AM for Birthdays
+  // ─────────────────────────────────────────────
+  //  Birthday Greetings — 9:00 AM every day
+  // ─────────────────────────────────────────────
   cron.schedule('0 9 * * *', async () => {
-    console.log('🔄 Running daily Birthday check...');
+    console.log('🎂 [Cron] Running Birthday check…');
     const status = getWhatsAppStatus();
     if (!status.connected) {
-      console.log('⚠️ WhatsApp not connected. Skipping birthday greetings.');
+      console.log('⚠️ [Cron] WhatsApp not connected — skipping birthday greetings.');
       return;
     }
 
     try {
       const today = new Date();
       const monthDay = `${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getDate().toString().padStart(2, '0')}`;
-      
+
       const allMembers = await Member.find({});
       let bdays = 0;
 
-      for (const member of allMembers) {
-        if (!member.phone) continue;
+      for (const m of allMembers) {
+        if (!m.phone || !m.dob) continue;
+        const d = new Date(m.dob);
+        const mMonthDay = `${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`;
 
-        if (member.dob) {
-          const mDate = new Date(member.dob);
-          const mMonthDay = `${(mDate.getMonth() + 1).toString().padStart(2, '0')}-${mDate.getDate().toString().padStart(2, '0')}`;
-          
-          if (mMonthDay === monthDay) {
-            bdays++;
-            const msg = `🎉 *HAPPY BIRTHDAY ${member.name.toUpperCase()}!* 🎂\n\nOn behalf of the entire team at *RFC Gym*, we wish you a fantastic day filled with joy, health, and massive gains! 💪🔥\n\nKeep pushing your limits and stay legendary! 🏋️‍♂️✨\n\n_Stay Fit, Stay Strong!_`;
-            await sendText(member.phone, msg);
-            await new Promise(r => setTimeout(r, 2000));
-          }
+        if (mMonthDay === monthDay) {
+          bdays++;
+          const msg = `🎉 *HAPPY BIRTHDAY ${m.name.toUpperCase()}!* 🎂\n\nOn behalf of the entire team at *RFC Gym*, we wish you a fantastic day filled with joy, health, and massive gains! 💪🔥\n\nKeep pushing your limits and stay legendary! 🏋️‍♂️✨\n\n_Stay Fit, Stay Strong!_`;
+          await sendText(m.phone, msg);
+          await new Promise(r => setTimeout(r, 2000));
         }
       }
 
-      console.log(`Sent ${bdays} birthday wishes.`);
-
+      console.log(`[Cron] Sent ${bdays} birthday wish(es).`);
     } catch (err) {
-      console.error('Error in Birthday cron job:', err);
+      console.error('[Cron] Birthday check error:', err);
     }
   });
 
-  // Running every Monday at 11:00 AM for Pending Fees Chasers
+  // ─────────────────────────────────────────────
+  //  Pending Fees Reminders — 11:00 AM every Monday
+  // ─────────────────────────────────────────────
   cron.schedule('0 11 * * 1', async () => {
-    console.log('🔄 Running weekly Pending Fees check...');
+    console.log('💸 [Cron] Running Pending Fees check…');
     const status = getWhatsAppStatus();
     if (!status.connected) {
-      console.log('⚠️ WhatsApp not connected. Skipping pending fee alerts.');
+      console.log('⚠️ [Cron] WhatsApp not connected — skipping pending fee alerts.');
       return;
     }
 
     try {
-      const pendingMembers = await Member.find({ paymentStatus: 'pending' });
-      console.log(`Found ${pendingMembers.length} members with pending fees.`);
+      const pending = await Member.find({ paymentStatus: 'pending' });
+      console.log(`[Cron] ${pending.length} members with pending fees.`);
 
-      for (const member of pendingMembers) {
-        if (!member.phone) continue;
-        const msg = `Hi *${member.name}*,\n\nWe noticed your RFC Gym membership fee is still marked as *Pending*. ⌛\n\nPlease clear your dues at the earliest so there is no interruption to your fitness journey! 💪\n\n_Stay Fit, Stay Strong!_`;
-        await sendText(member.phone, msg);
+      for (const m of pending) {
+        if (!m.phone) continue;
+        const msg = `Hi *${m.name}*,\n\nWe noticed your RFC Gym membership fee is still marked as *Pending*. ⌛\n\nPlease clear your dues at the earliest so there is no interruption to your fitness journey! 💪\n\n_Stay Fit, Stay Strong!_`;
+        await sendText(m.phone, msg);
         await new Promise(r => setTimeout(r, 2000));
       }
     } catch (err) {
-      console.error('Error in Pending Fees cron job:', err);
+      console.error('[Cron] Pending Fees error:', err);
     }
   });
 
-  // WhatsApp Health Watchdog (Every 5 minutes)
-  // Ensures that if the socket enters a "zombie" state, it's forcibly restarted
-  cron.schedule('*/5 * * * *', async () => {
+  // ─────────────────────────────────────────────
+  //  WhatsApp Health Watchdog — every 2 minutes
+  //  Detects zombie/stuck sockets and forces restart
+  // ─────────────────────────────────────────────
+  cron.schedule('*/2 * * * *', () => {
     try {
-      const status = getWhatsAppStatus();
-      // If we've been in "INITIALIZING" for more than 10 minutes, something is wrong
-      console.log(`🔍 [Watchdog] Current WhatsApp Status: ${status.status}, Connected: ${status.connected}`);
-      
-      // If it should be connected but isn't, or is stuck in initializing, check it
-      if (status.status === 'INITIALIZING' && !status.connected) {
-        // Just log for now, initWhatsApp has its own internal retry logic
-        console.log('ℹ️ [Watchdog] WhatsApp is currently initializing...');
-      }
+      runWatchdog();
     } catch (e) {
-      console.error('❌ [Watchdog] Monitoring error:', e.message);
+      console.error('❌ [Watchdog] Error:', e.message);
     }
   });
 
-  // Self-ping to keep Render free tier alive (every 10 minutes)
-  // This ensures the WhatsApp connection remains permanent and doesn't time out
-  cron.schedule('*/10 * * * *', async () => {
+  // ─────────────────────────────────────────────
+  //  Self-Ping Keep-Alive — every 8 minutes
+  //  Prevents Render free-tier from sleeping and
+  //  keeps the HTTP + WA connection warm
+  // ─────────────────────────────────────────────
+  cron.schedule('*/8 * * * *', async () => {
     try {
-      const selfUrl = process.env.RENDER_EXTERNAL_URL || process.env.BACKEND_URL || 'http://localhost:5005';
-      console.log(`📡 [Keep-Alive] Self-pinging to stay awake: ${selfUrl}`);
-      
-      const response = await fetch(`${selfUrl}/api/ping`).catch(() => null);
-      if (response && response.ok) {
-        console.log('✅ [Keep-Alive] Successfully pinged backend. Connection stable.');
+      const selfUrl = (
+        process.env.RENDER_EXTERNAL_URL ||
+        process.env.BACKEND_URL ||
+        `http://localhost:${process.env.PORT || 5005}`
+      ).replace(/\/$/, '');
+
+      const response = await fetch(`${selfUrl}/api/ping`, {
+        signal: AbortSignal.timeout(10_000) // 10-second hard timeout
+      }).catch(() => null);
+
+      if (response?.ok) {
+        console.log(`✅ [Keep-Alive] Pinged ${selfUrl} — server awake.`);
       } else {
-        console.warn('⚠️ [Keep-Alive] Self-ping failed or returned non-ok status.');
+        console.warn(`⚠️ [Keep-Alive] Ping to ${selfUrl} failed or non-OK.`);
       }
     } catch (e) {
-      console.error('❌ [Keep-Alive] Error during self-ping:', e.message);
+      console.error('❌ [Keep-Alive] Error:', e.message);
     }
   });
+
+  console.log('✅ [Cron] All jobs scheduled.');
 }

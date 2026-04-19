@@ -18,9 +18,9 @@ export default function Settings() {
   const [saveLoading, setSaveLoading] = useState(false);
   const [hasInitialized, setHasInitialized] = useState(false);
 
-  const apiUrl = (import.meta.env.VITE_API_URL || 
-                 import.meta.env.VITE_LOCAL_API_URL || 
-                 `http://localhost:5005/api`).replace(/\/$/, "");
+  const apiUrl = (import.meta.env.VITE_API_URL ||
+    import.meta.env.VITE_LOCAL_API_URL ||
+    `http://localhost:5005/api`).replace(/\/$/, "");
 
   async function fetchStatus() {
     try {
@@ -67,7 +67,7 @@ export default function Settings() {
     const interval = setInterval(() => {
       fetchStatus();
       fetchLogs();
-    }, 5000); 
+    }, 5000);
     return () => clearInterval(interval);
   }, [token]);
 
@@ -76,7 +76,7 @@ export default function Settings() {
     try {
       const res = await fetch(`${apiUrl}/whatsapp/config`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
@@ -102,13 +102,13 @@ export default function Settings() {
   }
 
   async function handleGetPairingCode() {
-    if(!pairingPhone) return alert('Please enter phone number first.');
+    if (!pairingPhone) return alert('Please enter phone number first.');
     setSaveLoading(true);
     try {
       // Step 1: Tell backend we chose pairing method
       await fetch(`${apiUrl}/whatsapp/config`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
@@ -122,14 +122,14 @@ export default function Settings() {
       // Step 2: Request the code manually
       const res = await fetch(`${apiUrl}/whatsapp/request-pairing`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ phone: pairingPhone })
       });
       const data = await res.json();
-      
+
       if (data.success) {
         fetchStatus();
       } else {
@@ -148,7 +148,7 @@ export default function Settings() {
     try {
       const res = await fetch(`${apiUrl}/whatsapp/verify-business`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
@@ -193,19 +193,19 @@ export default function Settings() {
   }
 
   async function handleTestMessage() {
-    if(!testPhone) return alert('Please enter a phone number to test.');
+    if (!testPhone) return alert('Please enter a phone number to test.');
     setTestLoading(true);
     try {
       const res = await fetch(`${apiUrl}/whatsapp/test-message`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` 
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ phone: testPhone })
       });
       const data = await res.json();
-      if(data.success) alert('Test message sent! Check your phone.');
+      if (data.success) alert('Test message sent! Check your phone.');
       else alert('Failed: ' + data.message);
     } catch (err) {
       console.error(err);
@@ -216,7 +216,7 @@ export default function Settings() {
   }
 
   async function handleLogout() {
-    if(!window.confirm('This will clear all WhatsApp session data. Continue?')) return;
+    if (!window.confirm('This will clear all WhatsApp session data. Continue?')) return;
     setLogoutLoading(true);
     try {
       const resp = await fetch(`${apiUrl}/whatsapp/logout`, {
@@ -286,9 +286,9 @@ export default function Settings() {
                     <div className="flex flex-col items-center justify-center p-4 md:p-6 bg-white rounded-2xl md:rounded-3xl shadow-2xl space-y-3">
                       <div className="text-gray-900 font-black text-lg md:text-xl tracking-tight text-center">SCAN QR CODE</div>
                       <div className="p-2 md:p-3 bg-gray-50 border-2 border-gray-100 rounded-xl w-full max-w-[200px] flex justify-center">
-                        <img 
-                          src={`https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(status.qr)}&size=300x300`} 
-                          alt="WhatsApp QR Code" 
+                        <img
+                          src={`https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(status.qr)}&size=300x300`}
+                          alt="WhatsApp QR Code"
                         />
                       </div>
                       <p className="text-gray-400 text-[10px] uppercase text-center font-bold">Linked Devices &gt; Link a Device</p>
@@ -299,7 +299,7 @@ export default function Settings() {
                     <div className="py-20 text-center text-gray-500 italic">Initializing QR Engine...</div>
                   )}
                   {status?.config?.connectionMethod !== 'qr' && (
-                     <button onClick={() => handleSaveConfig('qr')} className="w-full py-3 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-xl text-xs">Activate QR Method</button>
+                    <button onClick={() => handleSaveConfig('qr')} className="w-full py-3 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-xl text-xs">Activate QR Method</button>
                   )}
                 </div>
               )}
@@ -320,20 +320,20 @@ export default function Settings() {
                     <ConnectedProfile activeMethod={activeMethod} status={status} />
                   ) : (
                     <div className="space-y-4">
-                       <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Pairing Phone Number (with Country Code)</label>
-                       <input 
-                         placeholder="e.g. 919876543210"
-                         className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-cyan-500/50"
-                         value={pairingPhone}
-                         onChange={(e) => setPairingPhone(e.target.value.replace(/\D/g, ''))}
-                       />
-                       <button 
+                      <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Pairing Phone Number (with Country Code)</label>
+                      <input
+                        placeholder="e.g. 919876543210"
+                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-cyan-500/50"
+                        value={pairingPhone}
+                        onChange={(e) => setPairingPhone(e.target.value.replace(/\D/g, ''))}
+                      />
+                      <button
                         onClick={handleGetPairingCode}
                         disabled={saveLoading}
                         className="w-full py-3 bg-cyan-500 text-white rounded-xl font-bold shadow-lg shadow-cyan-500/20 disabled:opacity-50"
-                       >
-                         {saveLoading ? 'Generating...' : (status?.status === 'PAIRING_CODE_READY' ? 'Regenerate New Code' : 'Get Pairing Code')}
-                       </button>
+                      >
+                        {saveLoading ? 'Generating...' : (status?.status === 'PAIRING_CODE_READY' ? 'Regenerate New Code' : 'Get Pairing Code')}
+                      </button>
                     </div>
                   )}
                 </div>
@@ -346,31 +346,31 @@ export default function Settings() {
                   </div>
                   <div className="space-y-3">
                     <div className="space-y-2">
-                       <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Permanent Access Token</label>
-                       <input 
-                         type="password"
-                         className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-cyan-500/50 text-xs"
-                         value={businessApi.accessToken}
-                         onChange={(e) => setBusinessApi({...businessApi, accessToken: e.target.value})}
-                       />
+                      <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Permanent Access Token</label>
+                      <input
+                        type="password"
+                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-cyan-500/50 text-xs"
+                        value={businessApi.accessToken}
+                        onChange={(e) => setBusinessApi({ ...businessApi, accessToken: e.target.value })}
+                      />
                     </div>
                     <div className="space-y-2">
-                       <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Phone Number ID</label>
-                       <input 
-                         placeholder="e.g. 10982347589..."
-                         className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-cyan-500/50 text-xs"
-                         value={businessApi.phoneNumberId}
-                         onChange={(e) => setBusinessApi({...businessApi, phoneNumberId: e.target.value})}
-                       />
+                      <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Phone Number ID</label>
+                      <input
+                        placeholder="e.g. 10982347589..."
+                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-cyan-500/50 text-xs"
+                        value={businessApi.phoneNumberId}
+                        onChange={(e) => setBusinessApi({ ...businessApi, phoneNumberId: e.target.value })}
+                      />
                     </div>
                     <div className="flex gap-2 pt-2">
-                      <button 
-                        onClick={() => handleSaveConfig('business_api')} 
+                      <button
+                        onClick={() => handleSaveConfig('business_api')}
                         className="flex-1 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-xl font-bold text-xs"
                       >
                         Save Settings
                       </button>
-                      <button 
+                      <button
                         onClick={handleVerifyBusiness}
                         className="flex-1 py-3 bg-emerald-500 text-white rounded-xl font-bold text-xs shadow-lg shadow-emerald-500/20"
                       >
@@ -384,54 +384,54 @@ export default function Settings() {
 
             {/* Common Utils (Logs, Test) */}
             <div className="pt-6 border-t border-white/5 space-y-4">
-               <div className="flex gap-2">
-                  <button onClick={handleLogout} className="flex-1 py-3 px-4 bg-red-500/10 border border-red-500/20 text-red-500 rounded-xl font-bold text-[10px]">Disconnect Engine</button>
-                  <button onClick={handleRefresh} className="flex-1 py-3 px-4 bg-cyan-500 text-white rounded-xl font-bold text-[10px]">Repair Connection</button>
-               </div>
+              <div className="flex gap-2">
+                <button onClick={handleLogout} className="flex-1 py-3 px-4 bg-red-500/10 border border-red-500/20 text-red-500 rounded-xl font-bold text-[10px]">Disconnect Engine</button>
+                <button onClick={handleRefresh} className="flex-1 py-3 px-4 bg-cyan-500 text-white rounded-xl font-bold text-[10px]">Repair Connection</button>
+              </div>
 
-               <div className="space-y-2">
-                 <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Test Connection</div>
-                 <div className="flex gap-2">
-                   <input 
+              <div className="space-y-2">
+                <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Test Connection</div>
+                <div className="flex gap-2">
+                  <input
                     placeholder="10-digit phone"
                     className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white"
                     value={testPhone}
                     onChange={e => setTestPhone(e.target.value)}
-                   />
-                   <button 
+                  />
+                  <button
                     onClick={handleTestMessage}
                     disabled={!isConnected || testLoading}
                     className="px-4 py-2 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-lg text-[10px] font-bold"
-                   >
-                     {testLoading ? '...' : 'Send'}
-                   </button>
-                 </div>
-               </div>
+                  >
+                    {testLoading ? '...' : 'Send'}
+                  </button>
+                </div>
+              </div>
 
-               {logs.length > 0 && (
-                  <div className="pt-2">
-                    <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1 mb-2">Live Logs</div>
-                    <div className="bg-black/40 rounded-xl border border-white/5 p-3 max-h-[100px] overflow-y-auto space-y-2 scrollbar-hide">
-                      {logs.map((log, idx) => (
-                        <div key={idx} className="flex justify-between items-center text-[9px] font-mono">
-                          <span className={log.event.includes('ERROR') ? 'text-red-400' : 'text-cyan-400'}>[{log.event}] {log.message}</span>
-                        </div>
-                      ))}
-                    </div>
+              {logs.length > 0 && (
+                <div className="pt-2">
+                  <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1 mb-2">Live Logs</div>
+                  <div className="bg-black/40 rounded-xl border border-white/5 p-3 max-h-[100px] overflow-y-auto space-y-2 scrollbar-hide">
+                    {logs.map((log, idx) => (
+                      <div key={idx} className="flex justify-between items-center text-[9px] font-mono">
+                        <span className={log.event.includes('ERROR') ? 'text-red-400' : 'text-cyan-400'}>[{log.event}] {log.message}</span>
+                      </div>
+                    ))}
                   </div>
-               )}
+                </div>
+              )}
             </div>
           </div>
         </div>
 
         {/* Branding placeholder */}
         <div className="glass-card p-8 rounded-3xl h-fit">
-           <h2 className="text-xl font-bold text-white mb-6 flex items-center">⚙ Gym Branding</h2>
-           <div className="space-y-4 opacity-50 grayscale">
-              <label className="text-xs text-gray-500 uppercase tracking-widest">Gym Name</label>
-              <input disabled value="RFC Gym" className="w-full bg-white/10 border border-white/10 rounded-xl px-4 py-3" />
-              <p className="text-xs text-amber-500 font-medium italic">Settings Locked • Premium Subscription Required</p>
-           </div>
+          <h2 className="text-xl font-bold text-white mb-6 flex items-center">⚙ Gym Branding</h2>
+          <div className="space-y-4 opacity-50 grayscale">
+            <label className="text-xs text-gray-500 uppercase tracking-widest">Gym Name</label>
+            <input disabled value="RFC Gym" className="w-full bg-white/10 border border-white/10 rounded-xl px-4 py-3" />
+            <p className="text-xs text-amber-500 font-medium italic">Settings Locked • Premium Subscription Required</p>
+          </div>
         </div>
       </div>
     </div>
@@ -453,12 +453,12 @@ function ConnectedProfile({ activeMethod, status }) {
       </div>
       <div className="grid grid-cols-2 gap-2">
         <div className="p-2 bg-white/5 rounded-lg border border-white/5 text-[10px]">
-           <span className="text-gray-500 uppercase block font-bold mb-0.5">Uptime</span>
-           <span className="text-white font-medium">99.9% Stable</span>
+          <span className="text-gray-500 uppercase block font-bold mb-0.5">Uptime</span>
+          <span className="text-white font-medium">99.9% Stable</span>
         </div>
         <div className="p-2 bg-white/5 rounded-lg border border-white/5 text-[10px]">
-           <span className="text-gray-500 uppercase block font-bold mb-0.5">Sync</span>
-           <span className="text-white font-medium">Auto-Synced</span>
+          <span className="text-gray-500 uppercase block font-bold mb-0.5">Sync</span>
+          <span className="text-white font-medium">Auto-Synced</span>
         </div>
       </div>
     </div>
