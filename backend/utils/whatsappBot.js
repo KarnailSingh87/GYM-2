@@ -340,13 +340,10 @@ export async function sendWelcome(phone, { name, joinDate, expiryDate, timeSlot,
   const start = new Date(joinDate).toLocaleDateString();
   const end = new Date(expiryDate).toLocaleDateString();
   
-  let paymentText = paymentStatus === 'online' || paymentStatus === 'cash' 
-    ? 'Payment Received ✅' 
-    : 'Payment Pending ⌛';
-
-  if (amountReceived > 0) {
-    paymentText += ` (₹${amountReceived})`;
-  }
+  let paymentText = '';
+  if (paymentStatus === 'online') paymentText = 'Online Payment Received ✅';
+  else if (paymentStatus === 'cash') paymentText = 'Cash Payment Received ✅';
+  else paymentText = 'Payment Pending ⌛';
 
   let text = `🔥 *WELCOME TO RFC GYM* 🔥\n\nHello *${name}*,\n\nWelcome to the family! Your registration is complete. Here are your details:\n\n*Address:* ${address || 'Not Provided'}\n*Joining Date:* ${start}\n*Expiry Date:* ${end}\n*Time Slot:* ${timeSlot || 'Anytime'}\n*Payment Status:* ${paymentText}\n\nWe are excited to see you crush your goals at *RFC Gym*! 💪`;
 
