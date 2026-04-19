@@ -11,6 +11,15 @@ import path from 'path';
 import P from 'pino';
 import qrcode from 'qrcode-terminal';
 import WAState from '../models/WAState.js';
+import WALog from '../models/WALog.js';
+
+async function logWAEvent(event, message) {
+  try {
+    await WALog.create({ event, message });
+  } catch (err) {
+    // Non-blocking
+  }
+}
 
 let sock = null;
 let isInitializing = false;
@@ -201,9 +210,10 @@ export async function initWhatsApp(sessionId = SESSION_ID, force = false){
         const statusCode = lastDisconnect?.error?.output?.statusCode;
         const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
         
-        console.log(`🔌 Connection closed. Status: ${statusCode}, Reconnect: ${shouldReconnect}`);
-        
-        isInitializing = false;
+          console.log(`🔌 Connection closed. Status: ${statusCode}, Reconnect: ${shouldReconnect}`);
+          logWAEvent('DISCONNECTED', `Reason: ${statusCode}, Will Reconnect: ${shouldReconnect}`);
+          
+          isInitializing = false;
         
         if(shouldReconnect){
           reconnectAttempts++;
@@ -236,6 +246,7 @@ export async function initWhatsApp(sessionId = SESSION_ID, force = false){
         isInitializing = false;
         reconnectAttempts = 0; // Reset on successful connection
         console.log('✅ WhatsApp connected successfully!');
+        logWAEvent('CONNECTED', `User: ${currentSock.user.id}`);
       }
     });
 

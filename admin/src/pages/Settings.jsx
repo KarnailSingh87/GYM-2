@@ -9,6 +9,7 @@ export default function Settings() {
   const [testPhone, setTestPhone] = useState('');
   const [testLoading, setTestLoading] = useState(false);
   const [repairLoading, setRepairLoading] = useState(false);
+  const [logs, setLogs] = useState([]);
 
   const host = window.location.hostname;
   const apiUrl = import.meta.env.DEV 
@@ -33,9 +34,27 @@ export default function Settings() {
     }
   }
 
+  async function fetchLogs() {
+    try {
+      const res = await fetch(`${apiUrl}/whatsapp/logs`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setLogs(data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch logs', err);
+    }
+  }
+
   useEffect(() => {
     fetchStatus();
-    const interval = setInterval(fetchStatus, 5000); // Poll every 5 seconds
+    fetchLogs();
+    const interval = setInterval(() => {
+      fetchStatus();
+      fetchLogs();
+    }, 5000); 
     return () => clearInterval(interval);
   }, [token]);
 
@@ -234,6 +253,25 @@ export default function Settings() {
                     </button>
                   </div>
                 </div>
+
+                {/* Connection Logs */}
+                {logs.length > 0 && (
+                  <div className="pt-4 border-t border-white/5 space-y-2">
+                    <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest">Connection Logs (Live)</div>
+                    <div className="bg-black/20 rounded-xl border border-white/5 p-2 max-h-[120px] overflow-y-auto space-y-1 scrollbar-hide">
+                      {logs.map((log, idx) => (
+                        <div key={idx} className="flex justify-between items-center text-[9px] font-mono">
+                          <span className={`${log.event === 'CONNECTED' ? 'text-emerald-400' : 'text-amber-400'}`}>
+                            [{log.event}] {log.message}
+                          </span>
+                          <span className="text-gray-600 ml-2">
+                            {new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}

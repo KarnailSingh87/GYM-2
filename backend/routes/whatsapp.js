@@ -2,11 +2,21 @@ import express from 'express';
 import { requireAuth } from '../middleware/auth.js';
 import { getWhatsAppStatus, logoutWhatsApp, initWhatsApp, sendText } from '../utils/whatsappBot.js';
 import Member from '../models/Member.js';
+import WALog from '../models/WALog.js';
 
 const router = express.Router();
 
 router.get('/status', requireAuth, (req, res) => {
   res.json(getWhatsAppStatus());
+});
+
+router.get('/logs', requireAuth, async (req, res) => {
+  try {
+    const logs = await WALog.find().sort({ timestamp: -1 }).limit(15);
+    res.json(logs);
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to fetch logs' });
+  }
 });
 
 router.post('/refresh', requireAuth, async (req, res) => {
