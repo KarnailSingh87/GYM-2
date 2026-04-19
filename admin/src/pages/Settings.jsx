@@ -47,14 +47,17 @@ export default function Settings() {
     if(!window.confirm('This will clear all WhatsApp session data. You will need to re-scan the QR code. Continue?')) return;
     setLogoutLoading(true);
     try {
-      await fetch(`${apiUrl}/whatsapp/logout`, {
+      const resp = await fetch(`${apiUrl}/whatsapp/logout`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
+      if (!resp.ok) throw new Error('Logout request failed');
+      
       fetchStatus();
       alert('Session cleared. Please wait a few seconds for a new QR code to appear.');
     } catch (err) {
-      alert('Failed to logout');
+      console.error(err);
+      alert('Failed to logout: ' + err.message);
     } finally {
       setLogoutLoading(false);
     }

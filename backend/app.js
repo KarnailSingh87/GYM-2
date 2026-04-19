@@ -11,8 +11,16 @@ dotenv.config()
 
 const app = express()
 
+const FRONTEND = process.env.FRONTEND_ORIGIN || 'http://localhost:5173'
+app.use(cors({
+  origin: [FRONTEND, "http://localhost:5173", "http://127.0.0.1:5173"],
+  credentials: true
+}))
+
 // Security Middleware
-app.use(helmet())
+app.use(helmet({
+  crossOriginResourcePolicy: false, // important for CORS API
+}))
 
 // Rate limiting (Basic DDoS and brute force protection)
 const limiter = rateLimit({
@@ -24,9 +32,6 @@ const limiter = rateLimit({
 app.use('/api', limiter)
 
 app.use(express.json())
-
-const FRONTEND = process.env.FRONTEND_ORIGIN || 'http://localhost:5173'
-app.use(cors())
 
 app.use('/api/auth', authRoutes)
 app.use('/api/members', memberRoutes)
