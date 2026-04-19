@@ -73,3 +73,25 @@ body {
   0% { transform: scaleX(1); }
   100% { transform: scaleX(0); }
 }
+
+/* Fix for mobile inputs blowing out of containers */
+input[type="text"],
+input[type="tel"],
+input[type="date"],
+input[type="time"],
+input[type="number"],
+textarea,
+select {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  min-width: 0 !important;
+  -webkit-appearance: none;
+}
+
+/* Ensure date/time pickers show values correctly in dark mode */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  cursor: pointer;
+}

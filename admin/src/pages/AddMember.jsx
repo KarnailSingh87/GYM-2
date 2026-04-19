@@ -151,20 +151,20 @@ export default function AddMember({ onNavigate }) {
                 onChange={e=>setAddress(e.target.value)} 
               />
             </div>
-            <div className="space-y-1.5 md:space-y-2 min-w-0">
-              <label className="text-[10px] md:text-xs font-semibold text-gray-500 uppercase tracking-widest ml-1">Date of Birth (Optional)</label>
+            <div className="space-y-1.5 md:space-y-2 min-w-0 w-full">
+              <label className="text-[10px] md:text-xs font-semibold text-gray-500 uppercase tracking-widest ml-1 block text-left">Date of Birth (Optional)</label>
               <input 
                 type="date" 
-                className="w-full max-w-full bg-white/5 border border-white/10 rounded-lg md:rounded-xl px-3 md:px-4 py-2.5 md:py-3 text-sm md:text-base outline-none focus:border-cyan-500/50 focus:bg-white/[0.08]" 
+                className="w-full max-w-full bg-white/5 border border-white/10 rounded-lg md:rounded-xl px-3 md:px-4 py-2.5 md:py-3 text-sm md:text-base outline-none focus:border-cyan-500/50 focus:bg-white/[0.08] text-left appearance-none" 
                 value={dob} 
                 onChange={e=>setDob(e.target.value)} 
               />
             </div>
-            <div className="space-y-1.5 md:space-y-2 min-w-0">
-              <label className="text-[10px] md:text-xs font-semibold text-gray-500 uppercase tracking-widest ml-1">Joining Date</label>
+            <div className="space-y-1.5 md:space-y-2 min-w-0 w-full">
+              <label className="text-[10px] md:text-xs font-semibold text-gray-500 uppercase tracking-widest ml-1 block text-left">Joining Date</label>
               <input 
                 type="date" 
-                className="w-full max-w-full bg-white/5 border border-white/10 rounded-lg md:rounded-xl px-3 md:px-4 py-2.5 md:py-3 text-sm md:text-base outline-none focus:border-cyan-500/50 focus:bg-white/[0.08]" 
+                className="w-full max-w-full bg-white/5 border border-white/10 rounded-lg md:rounded-xl px-3 md:px-4 py-2.5 md:py-3 text-sm md:text-base outline-none focus:border-cyan-500/50 focus:bg-white/[0.08] text-left appearance-none" 
                 value={joinDate} 
                 onChange={e=>setJoinDate(e.target.value)} 
               />
@@ -172,13 +172,13 @@ export default function AddMember({ onNavigate }) {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-            <div className="space-y-1.5 md:space-y-2 min-w-0">
-              <label className="text-[10px] md:text-xs font-semibold text-gray-500 uppercase tracking-widest ml-1">Start Time</label>
-              <input type="time" className="w-full max-w-full bg-white/5 border border-white/10 rounded-lg md:rounded-xl px-3 md:px-4 py-2.5 md:py-3 text-sm md:text-base outline-none focus:border-cyan-500/50" value={startTime} onChange={e=>setStartTime(e.target.value)} />
+            <div className="space-y-1.5 md:space-y-2 min-w-0 w-full">
+              <label className="text-[10px] md:text-xs font-semibold text-gray-500 uppercase tracking-widest ml-1 block text-left">Start Time</label>
+              <input type="time" className="w-full max-w-full bg-white/5 border border-white/10 rounded-lg md:rounded-xl px-3 md:px-4 py-2.5 md:py-3 text-sm md:text-base outline-none focus:border-cyan-500/50 text-left appearance-none" value={startTime} onChange={e=>setStartTime(e.target.value)} />
             </div>
-            <div className="space-y-1.5 md:space-y-2 min-w-0">
-              <label className="text-[10px] md:text-xs font-semibold text-gray-500 uppercase tracking-widest ml-1">End Time</label>
-              <input type="time" className="w-full max-w-full bg-white/5 border border-white/10 rounded-lg md:rounded-xl px-3 md:px-4 py-2.5 md:py-3 text-sm md:text-base outline-none focus:border-cyan-500/50" value={endTime} onChange={e=>setEndTime(e.target.value)} />
+            <div className="space-y-1.5 md:space-y-2 min-w-0 w-full">
+              <label className="text-[10px] md:text-xs font-semibold text-gray-500 uppercase tracking-widest ml-1 block text-left">End Time</label>
+              <input type="time" className="w-full max-w-full bg-white/5 border border-white/10 rounded-lg md:rounded-xl px-3 md:px-4 py-2.5 md:py-3 text-sm md:text-base outline-none focus:border-cyan-500/50 text-left appearance-none" value={endTime} onChange={e=>setEndTime(e.target.value)} />
               {durationExceeded() && <div className="text-red-400 text-[10px] md:text-xs mt-1">Duration cannot exceed 2 hours</div>}
             </div>
           </div>
