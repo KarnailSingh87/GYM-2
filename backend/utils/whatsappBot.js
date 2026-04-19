@@ -23,9 +23,11 @@ let reconnectAttempts = 0;
 let reconnectTimer = null;
 
 export function getWhatsAppStatus() {
+  // If we have a socket but the connection isn't literally 'open', status should be initializing/pending
+  const isActuallyConnected = sock?.user && waState.status === 'CONNECTED';
   return {
     ...waState,
-    connected: !!sock?.user
+    connected: isActuallyConnected
   };
 }
 

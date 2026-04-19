@@ -8,6 +8,7 @@ export default function Settings() {
   const [logoutLoading, setLogoutLoading] = useState(false);
   const [testPhone, setTestPhone] = useState('');
   const [testLoading, setTestLoading] = useState(false);
+  const [repairLoading, setRepairLoading] = useState(false);
 
   const host = window.location.hostname;
   const apiUrl = import.meta.env.DEV 
@@ -40,7 +41,7 @@ export default function Settings() {
 
   async function handleRefresh() {
     try {
-      setLoading(true);
+      setRepairLoading(true);
       const res = await fetch(`${apiUrl}/whatsapp/refresh`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
@@ -50,11 +51,15 @@ export default function Settings() {
         window.location.reload();
         return;
       }
+      // Wait for engine to cycle
+      await new Promise(r => setTimeout(r, 2000));
       fetchStatus();
+      alert('Connection repair initiated! Please wait 10-20 seconds for the engine to stabilize.');
     } catch (err) {
       console.error('Failed to refresh', err);
+      alert('Failed to trigger repair. Check internet connection.');
     } finally {
-      setLoading(false);
+      setRepairLoading(false);
     }
   }
 
@@ -202,10 +207,11 @@ export default function Settings() {
                   </button>
                   <button 
                     onClick={handleRefresh}
-                    className="flex items-center justify-center py-3 px-6 bg-cyan-500 text-white rounded-xl font-bold text-sm transition-all hover:bg-cyan-400 shadow-lg shadow-cyan-500/20 whitespace-nowrap"
+                    disabled={repairLoading}
+                    className="flex items-center justify-center py-3 px-6 bg-cyan-500 text-white rounded-xl font-bold text-sm transition-all hover:bg-cyan-400 shadow-lg shadow-cyan-500/20 whitespace-nowrap disabled:opacity-50"
                     title="Force Reconnect Engine"
                   >
-                    🔄 Repair Connection
+                    {repairLoading ? '🔄 Repairing...' : '🔄 Repair Connection'}
                   </button>
                 </div>
 
