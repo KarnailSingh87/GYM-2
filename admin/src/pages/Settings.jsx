@@ -11,10 +11,17 @@ export default function Settings() {
   const [repairLoading, setRepairLoading] = useState(false);
   const [logs, setLogs] = useState([]);
 
-  const host = window.location.hostname;
-  const apiUrl = import.meta.env.DEV 
-    ? `http://${host}:5005/api` 
-    : import.meta.env.VITE_API_URL;
+  // Config State
+  const [activeMethod, setActiveMethod] = useState('qr');
+  const [pairingPhone, setPairingPhone] = useState('');
+  const [businessApi, setBusinessApi] = useState({ accessToken: '', phoneNumberId: '' });
+  const [saveLoading, setSaveLoading] = useState(false);
+  const [hasInitialized, setHasInitialized] = useState(false);
+
+  const apiUrl = (import.meta.env.VITE_API_URL || 
+                 import.meta.env.VITE_LOCAL_API_URL || 
+                 `http://localhost:5005/api`).replace(/\/$/, "");
+
   async function fetchStatus() {
     try {
       const res = await fetch(`${apiUrl}/whatsapp/status`, {
@@ -27,6 +34,12 @@ export default function Settings() {
       }
       const data = await res.json();
       setStatus(data);
+      if (data.config && !hasInitialized) {
+        setActiveMethod(data.config.connectionMethod);
+        setPairingPhone(data.config.pairingPhone || '');
+        setBusinessApi(data.config.businessApi || { accessToken: '', phoneNumberId: '' });
+        setHasInitialized(true);
+      }
     } catch (err) {
       console.error('Failed to fetch WhatsApp status', err);
     } finally {
@@ -58,6 +71,62 @@ export default function Settings() {
     return () => clearInterval(interval);
   }, [token]);
 
+  async function handleSaveConfig(method) {
+    setSaveLoading(true);
+    try {
+      const res = await fetch(`${apiUrl}/whatsapp/config`, {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          connectionMethod: method,
+          pairingPhone: pairingPhone,
+          businessApi: businessApi
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(data.message);
+        fetchStatus();
+      } else {
+        alert('Error: ' + data.message);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Failed to save configuration.');
+    } finally {
+      setSaveLoading(false);
+    }
+  }
+
+  async function handleVerifyBusiness() {
+    setSaveLoading(true);
+    try {
+      const res = await fetch(`${apiUrl}/whatsapp/verify-business`, {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(businessApi)
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert('Success: ' + data.message);
+        fetchStatus();
+      } else {
+        alert('Verification Failed: ' + data.message);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error verifying API credentials.');
+    } finally {
+      setSaveLoading(false);
+    }
+  }
+
   async function handleRefresh() {
     try {
       setRepairLoading(true);
@@ -70,13 +139,12 @@ export default function Settings() {
         window.location.reload();
         return;
       }
-      // Wait for engine to cycle
       await new Promise(r => setTimeout(r, 2000));
       fetchStatus();
-      alert('Connection repair initiated! Please wait 10-20 seconds for the engine to stabilize.');
+      alert('Connection repair initiated!');
     } catch (err) {
       console.error('Failed to refresh', err);
-      alert('Failed to trigger repair. Check internet connection.');
+      alert('Failed to trigger repair.');
     } finally {
       setRepairLoading(false);
     }
@@ -106,32 +174,24 @@ export default function Settings() {
   }
 
   async function handleLogout() {
-    if(!window.confirm('This will clear all WhatsApp session data. You will need to re-scan the QR code. Continue?')) return;
+    if(!window.confirm('This will clear all WhatsApp session data. Continue?')) return;
     setLogoutLoading(true);
     try {
       const resp = await fetch(`${apiUrl}/whatsapp/logout`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      
-      if (resp.status === 401) {
-        // Token is already invalid, just clear local session
-        localStorage.removeItem('admin_token');
-        window.location.reload();
-        return;
-      }
-
-      if (!resp.ok) throw new Error('Logout request failed');
-      
       fetchStatus();
-      alert('Session cleared. Please wait a few seconds for a new QR code to appear.');
+      alert('Session cleared.');
     } catch (err) {
       console.error(err);
-      alert('Failed to logout: ' + err.message);
+      alert('Failed to logout.');
     } finally {
       setLogoutLoading(false);
     }
   }
+
+  const isConnected = status?.connected || (status?.config?.connectionMethod === 'business_api' && status?.config?.businessApi?.verified);
 
   return (
     <div className="space-y-6 md:space-y-8 animate-in fade-in duration-500 pb-10">
@@ -143,161 +203,220 @@ export default function Settings() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8">
         {/* WhatsApp Management Card */}
         <div className="glass-card p-5 md:p-8 rounded-2xl md:rounded-3xl relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity hidden sm:block">
-             <div className="text-6xl text-white">📱</div>
-          </div>
-          
           <h2 className="text-lg md:text-xl font-bold text-white mb-4 md:mb-6 flex items-center">
             <span className="w-6 h-6 md:w-8 md:h-8 bg-emerald-500/20 rounded-md md:rounded-lg flex items-center justify-center mr-2 md:mr-3 text-emerald-400 text-xs md:text-sm">✓</span>
             WhatsApp Integration
           </h2>
 
-          {loading && !status ? (
-            <div className="flex flex-col items-center justify-center py-6 md:py-10 space-y-4">
-              <div className="w-8 h-8 md:w-10 md:h-10 border-4 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin"></div>
-              <p className="text-gray-500 text-xs md:text-sm">Checking connection...</p>
-            </div>
-          ) : (
-            <div className="space-y-4 md:space-y-6">
-              <div className="flex items-center justify-between p-3 md:p-4 bg-white/5 rounded-xl md:rounded-2xl border border-white/10">
-                <div>
-                  <div className="text-[10px] md:text-xs font-semibold text-gray-500 uppercase tracking-wider">Connection Status</div>
-                  <div className={`text-base md:text-lg font-bold mt-0.5 md:mt-1 ${status?.connected ? 'text-emerald-400' : 'text-amber-400'}`}>
-                    {status?.connected ? '✅ Active 24/7' : (status?.status === 'QR_READY' ? '⏳ Waiting for Scan' : '⚙️ Initializing Engine...')}
-                  </div>
-                </div>
-                <div className={`flex items-center space-x-1.5 md:space-x-2 px-2 md:px-3 py-1 rounded-full text-[9px] md:text-[10px] font-bold ${status?.connected ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/20 text-amber-400 border border-amber-500/20'}`}>
-                  <span className={`w-1.5 h-1.5 rounded-full ${status?.connected ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`}></span>
-                  <span>{status?.connected ? 'STABLE' : 'PENDING'}</span>
+          <div className="space-y-4 md:space-y-6">
+            {/* Connection Status Header */}
+            <div className="flex items-center justify-between p-3 md:p-4 bg-white/5 rounded-xl md:rounded-2xl border border-white/10">
+              <div>
+                <div className="text-[10px] md:text-xs font-semibold text-gray-500 uppercase tracking-wider">Connection Method</div>
+                <div className="text-white font-bold text-sm md:text-base capitalize">
+                  {activeMethod.replace('_', ' ')}
                 </div>
               </div>
+              <div className={`flex items-center space-x-1.5 md:space-x-2 px-2 md:px-3 py-1 rounded-full text-[9px] md:text-[10px] font-bold ${isConnected ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/20 text-amber-400 border border-amber-500/20'}`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`}></span>
+                <span>{isConnected ? 'ACTIVE' : 'DISCONNECTED'}</span>
+              </div>
+            </div>
 
-              {!status?.connected && status?.qr && (
-                <div className="flex flex-col items-center justify-center p-4 md:p-6 bg-white rounded-2xl md:rounded-3xl shadow-2xl shadow-black/50 space-y-3 md:space-y-4">
-                  <div className="text-gray-900 font-black text-lg md:text-xl tracking-tight text-center">LINK GYM WHATSAPP</div>
-                  <div className="p-2 md:p-3 bg-gray-50 border-2 border-gray-100 rounded-xl md:rounded-2xl w-full max-w-[280px] flex justify-center">
-                    <img 
-                      src={`https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(status.qr)}&size=300x300`} 
-                      alt="WhatsApp QR Code" 
-                      className="w-full h-auto aspect-square"
-                    />
-                  </div>
-                  <div className="text-center space-y-1">
-                    <p className="text-gray-500 text-xs md:text-sm font-medium">Scan with {status.targetNumber || 'the Owner Number'}</p>
-                    <p className="text-gray-400 text-[9px] md:text-[10px] uppercase tracking-tighter">Open WhatsApp &gt; Linked Devices &gt; Link a Device</p>
-                  </div>
+            {/* Method Tabs */}
+            <div className="flex p-1 bg-black/40 rounded-xl border border-white/5">
+              {['qr', 'pairing', 'business_api'].map((method) => (
+                <button
+                  key={method}
+                  onClick={() => setActiveMethod(method)}
+                  className={`flex-1 py-2 text-[10px] md:text-xs font-bold rounded-lg transition-all ${activeMethod === method ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/20' : 'text-gray-500 hover:text-gray-300'}`}
+                >
+                  {method === 'business_api' ? 'API KEY' : method.toUpperCase()}
+                </button>
+              ))}
+            </div>
+
+            {/* Method-specific content */}
+            <div className="min-h-[280px] animate-in slide-in-from-bottom-2 duration-300">
+              {activeMethod === 'qr' && (
+                <div className="space-y-4">
+                  {!isConnected && status?.qr ? (
+                    <div className="flex flex-col items-center justify-center p-4 md:p-6 bg-white rounded-2xl md:rounded-3xl shadow-2xl space-y-3">
+                      <div className="text-gray-900 font-black text-lg md:text-xl tracking-tight text-center">SCAN QR CODE</div>
+                      <div className="p-2 md:p-3 bg-gray-50 border-2 border-gray-100 rounded-xl w-full max-w-[200px] flex justify-center">
+                        <img 
+                          src={`https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(status.qr)}&size=300x300`} 
+                          alt="WhatsApp QR Code" 
+                        />
+                      </div>
+                      <p className="text-gray-400 text-[10px] uppercase text-center font-bold">Linked Devices &gt; Link a Device</p>
+                    </div>
+                  ) : isConnected ? (
+                    <ConnectedProfile activeMethod={activeMethod} status={status} />
+                  ) : (
+                    <div className="py-20 text-center text-gray-500 italic">Initializing QR Engine...</div>
+                  )}
+                  {status?.config?.connectionMethod !== 'qr' && (
+                     <button onClick={() => handleSaveConfig('qr')} className="w-full py-3 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-xl text-xs">Activate QR Method</button>
+                  )}
                 </div>
               )}
 
-              {status?.connected && status?.user && (
-                <div className="p-4 md:p-6 bg-emerald-500/5 border border-emerald-500/20 rounded-xl md:rounded-2xl space-y-3 md:space-y-4 shadow-inner">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3 md:space-x-4">
-                      <div className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center text-xl md:text-2xl shadow-lg shadow-emerald-500/20 border-2 border-white/10 shrink-0">
-                        🏋️
-                      </div>
-                      <div className="min-w-0">
-                        <div className="text-white font-black text-lg md:text-xl truncate">{status.user.name || 'RFC GYM OWNER'}</div>
-                        <div className="text-emerald-400 font-mono text-xs md:text-sm">+{status.user.id.split(':')[0]}</div>
+              {activeMethod === 'pairing' && (
+                <div className="space-y-4">
+                  {!isConnected && status?.status === 'PAIRING_CODE_READY' && status?.pairingCode ? (
+                    <div className="flex flex-col items-center justify-center p-6 md:p-8 bg-cyan-500 rounded-2xl md:rounded-3xl shadow-2xl text-white space-y-4">
+                      <div className="font-bold uppercase tracking-widest text-[10px] opacity-80">Your Pairing Code</div>
+                      <div className="text-4xl md:text-5xl font-black tracking-[0.2em] font-mono pulse">{status.pairingCode}</div>
+                      <div className="bg-black/20 p-4 rounded-xl text-center">
+                        <p className="text-xs font-medium">1. Open WhatsApp &gt; Linked Devices</p>
+                        <p className="text-xs font-medium mt-1">2. "Link with phone number instead"</p>
+                        <p className="text-xs font-medium mt-1">3. Enter this code on your phone</p>
                       </div>
                     </div>
+                  ) : isConnected ? (
+                    <ConnectedProfile activeMethod={activeMethod} status={status} />
+                  ) : (
+                    <div className="space-y-4">
+                       <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Pairing Phone Number (with Country Code)</label>
+                       <input 
+                         placeholder="e.g. 919876543210"
+                         className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-cyan-500/50"
+                         value={pairingPhone}
+                         onChange={(e) => setPairingPhone(e.target.value.replace(/\D/g, ''))}
+                       />
+                       <button 
+                        onClick={() => handleSaveConfig('pairing')}
+                        disabled={saveLoading}
+                        className="w-full py-3 bg-cyan-500 text-white rounded-xl font-bold shadow-lg shadow-cyan-500/20"
+                       >
+                         {status?.status === 'PAIRING_CODE_READY' ? 'Regenerate New Code' : 'Get Pairing Code'}
+                       </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {activeMethod === 'business_api' && (
+                <div className="space-y-4">
+                  <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl text-[10px] text-amber-200">
+                    <span className="font-bold">NOTE:</span> Official API is ultra-stable but requires approval via Facebook Business Manager.
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3 pt-2">
-                    <div className="p-2.5 md:p-3 bg-white/5 rounded-lg md:rounded-xl border border-white/5">
-                      <div className="text-[9px] md:text-[10px] text-gray-500 uppercase font-bold">Session Type</div>
-                      <div className="text-xs text-white font-medium">Permanent Multi-Device</div>
+                  <div className="space-y-3">
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Permanent Access Token</label>
+                       <input 
+                         type="password"
+                         className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-cyan-500/50 text-xs"
+                         value={businessApi.accessToken}
+                         onChange={(e) => setBusinessApi({...businessApi, accessToken: e.target.value})}
+                       />
                     </div>
-                    <div className="p-2.5 md:p-3 bg-white/5 rounded-lg md:rounded-xl border border-white/5">
-                      <div className="text-[9px] md:text-[10px] text-gray-500 uppercase font-bold">Uptime</div>
-                      <div className="text-xs text-white font-medium">24x7 Monitored</div>
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Phone Number ID</label>
+                       <input 
+                         placeholder="e.g. 10982347589..."
+                         className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-cyan-500/50 text-xs"
+                         value={businessApi.phoneNumberId}
+                         onChange={(e) => setBusinessApi({...businessApi, phoneNumberId: e.target.value})}
+                       />
+                    </div>
+                    <div className="flex gap-2 pt-2">
+                      <button 
+                        onClick={() => handleSaveConfig('business_api')} 
+                        className="flex-1 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-xl font-bold text-xs"
+                      >
+                        Save Settings
+                      </button>
+                      <button 
+                        onClick={handleVerifyBusiness}
+                        className="flex-1 py-3 bg-emerald-500 text-white rounded-xl font-bold text-xs shadow-lg shadow-emerald-500/20"
+                      >
+                        Verify & Link
+                      </button>
                     </div>
                   </div>
                 </div>
               )}
+            </div>
 
-              <div className="pt-2 md:pt-4 space-y-3">
-                <div className="flex flex-col sm:flex-row gap-2 sm:space-x-3">
-                  <button 
-                    onClick={handleLogout}
-                    disabled={logoutLoading}
-                    className="w-full sm:flex-1 py-3 px-4 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-500 rounded-xl font-bold text-xs md:text-sm transition-all disabled:opacity-50"
-                  >
-                    {logoutLoading ? 'Disconnecting...' : 'Disconnect Device'}
-                  </button>
-                  <button 
-                    onClick={handleRefresh}
-                    disabled={repairLoading}
-                    className="flex items-center justify-center py-3 px-6 bg-cyan-500 text-white rounded-xl font-bold text-sm transition-all hover:bg-cyan-400 shadow-lg shadow-cyan-500/20 whitespace-nowrap disabled:opacity-50"
-                    title="Force Reconnect Engine"
-                  >
-                    {repairLoading ? '🔄 Repairing...' : '🔄 Repair Connection'}
-                  </button>
-                </div>
+            {/* Common Utils (Logs, Test) */}
+            <div className="pt-6 border-t border-white/5 space-y-4">
+               <div className="flex gap-2">
+                  <button onClick={handleLogout} className="flex-1 py-3 px-4 bg-red-500/10 border border-red-500/20 text-red-500 rounded-xl font-bold text-[10px]">Disconnect Engine</button>
+                  <button onClick={handleRefresh} className="flex-1 py-3 px-4 bg-cyan-500 text-white rounded-xl font-bold text-[10px]">Repair Connection</button>
+               </div>
 
-                <div className="pt-4 border-t border-white/5 space-y-3">
-                  <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest">Connection Tester</div>
-                  <div className="flex gap-2">
-                    <input 
-                      type="tel" 
-                      placeholder="Enter 10-digit number" 
-                      className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-cyan-500/50"
-                      value={testPhone}
-                      onChange={e => setTestPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                    />
-                    <button 
-                      onClick={handleTestMessage}
-                      disabled={testLoading || !status?.connected}
-                      className="px-4 py-2 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-emerald-500/30 transition-all disabled:opacity-50"
-                    >
-                      {testLoading ? 'Sending...' : 'Send Test'}
-                    </button>
-                  </div>
-                </div>
+               <div className="space-y-2">
+                 <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Test Connection</div>
+                 <div className="flex gap-2">
+                   <input 
+                    placeholder="10-digit phone"
+                    className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white"
+                    value={testPhone}
+                    onChange={e => setTestPhone(e.target.value)}
+                   />
+                   <button 
+                    onClick={handleTestMessage}
+                    disabled={!isConnected || testLoading}
+                    className="px-4 py-2 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-lg text-[10px] font-bold"
+                   >
+                     {testLoading ? '...' : 'Send'}
+                   </button>
+                 </div>
+               </div>
 
-                {/* Connection Logs */}
-                {logs.length > 0 && (
-                  <div className="pt-4 border-t border-white/5 space-y-2">
-                    <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest">Connection Logs (Live)</div>
-                    <div className="bg-black/20 rounded-xl border border-white/5 p-2 max-h-[120px] overflow-y-auto space-y-1 scrollbar-hide">
+               {logs.length > 0 && (
+                  <div className="pt-2">
+                    <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1 mb-2">Live Logs</div>
+                    <div className="bg-black/40 rounded-xl border border-white/5 p-3 max-h-[100px] overflow-y-auto space-y-2 scrollbar-hide">
                       {logs.map((log, idx) => (
                         <div key={idx} className="flex justify-between items-center text-[9px] font-mono">
-                          <span className={`${log.event === 'CONNECTED' ? 'text-emerald-400' : 'text-amber-400'}`}>
-                            [{log.event}] {log.message}
-                          </span>
-                          <span className="text-gray-600 ml-2">
-                            {new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </span>
+                          <span className={log.event.includes('ERROR') ? 'text-red-400' : 'text-cyan-400'}>[{log.event}] {log.message}</span>
                         </div>
                       ))}
                     </div>
                   </div>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Other configurations placeholder */}
-        <div className="space-y-8">
-          <div className="glass-card p-8 rounded-3xl">
-             <h2 className="text-xl font-bold text-white mb-6 flex items-center">
-              <span className="w-8 h-8 bg-cyan-500/20 rounded-lg flex items-center justify-center mr-3 text-cyan-400 text-sm">⚙</span>
-              Gym Branding
-            </h2>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-widest ml-1">Gym Display Name</label>
-                <input 
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none text-white focus:border-cyan-500/50 transition-all font-medium" 
-                  defaultValue="RFC Gym" 
-                  disabled
-                />
-              </div>
-              <div className="p-4 bg-cyan-500/5 border border-cyan-500/10 rounded-2xl italic text-xs text-gray-400">
-                Branding settings are currently hard-coded. More customization options coming soon in future updates.
-              </div>
+               )}
             </div>
           </div>
+        </div>
+
+        {/* Branding placeholder */}
+        <div className="glass-card p-8 rounded-3xl h-fit">
+           <h2 className="text-xl font-bold text-white mb-6 flex items-center">⚙ Gym Branding</h2>
+           <div className="space-y-4 opacity-50 grayscale">
+              <label className="text-xs text-gray-500 uppercase tracking-widest">Gym Name</label>
+              <input disabled value="RFC Gym" className="w-full bg-white/10 border border-white/10 rounded-xl px-4 py-3" />
+              <p className="text-xs text-amber-500 font-medium italic">Settings Locked • Premium Subscription Required</p>
+           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ConnectedProfile({ activeMethod, status }) {
+  const name = activeMethod === 'business_api' ? 'Official API Gateway' : status?.user?.name || 'Linked Device';
+  const phone = activeMethod === 'business_api' ? 'Verified Account' : `+${status?.user?.id.split(':')[0]}`;
+
+  return (
+    <div className="p-4 md:p-6 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl space-y-4 shadow-inner animate-in zoom-in-95">
+      <div className="flex items-center space-x-4">
+        <div className="w-14 h-14 rounded-full bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center text-2xl shadow-lg border-2 border-white/10">🏋️</div>
+        <div>
+          <div className="text-white font-black text-lg">{name}</div>
+          <div className="text-emerald-400 font-mono text-xs">{phone}</div>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <div className="p-2 bg-white/5 rounded-lg border border-white/5 text-[10px]">
+           <span className="text-gray-500 uppercase block font-bold mb-0.5">Uptime</span>
+           <span className="text-white font-medium">99.9% Stable</span>
+        </div>
+        <div className="p-2 bg-white/5 rounded-lg border border-white/5 text-[10px]">
+           <span className="text-gray-500 uppercase block font-bold mb-0.5">Sync</span>
+           <span className="text-white font-medium">Auto-Synced</span>
         </div>
       </div>
     </div>

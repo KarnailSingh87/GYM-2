@@ -3,11 +3,74 @@ import { requireAuth } from '../middleware/auth.js';
 import { getWhatsAppStatus, logoutWhatsApp, initWhatsApp, sendText } from '../utils/whatsappBot.js';
 import Member from '../models/Member.js';
 import WALog from '../models/WALog.js';
+import WAConfig from '../models/WAConfig.js';
+import { verifyBusinessApi } from '../utils/whatsappBusinessApi.js';
 
 const router = express.Router();
 
-router.get('/status', requireAuth, (req, res) => {
-  res.json(getWhatsAppStatus());
+router.get('/status', requireAuth, async (req, res) => {
+  const botStatus = getWhatsAppStatus();
+  const config = await WAConfig.findOne({ id: 'primary' });
+  res.json({
+    ...botStatus,
+    config: config || { connectionMethod: 'qr' }
+  });
+});
+
+router.get('/config', requireAuth, async (req, res) => {
+  try {
+    const config = await WAConfig.findOne({ id: 'primary' });
+    res.json(config || { connectionMethod: 'qr' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to fetch config' });
+  }
+});
+
+router.post('/config', requireAuth, async (req, res) => {
+  try {
+    const { connectionMethod, pairingPhone, businessApi } = req.body;
+    
+    await WAConfig.findOneAndUpdate(
+      { id: 'primary' },
+      { 
+        connectionMethod, 
+        pairingPhone, 
+        businessApi, 
+      },
+      { upsert: true, new: true }
+    );
+
+    // If changing method, trigger a fresh initialization
+    await initWhatsApp(undefined, true);
+    
+    res.json({ success: true, message: 'Configuration updated and engine restarted.' });
+  } catch (err) {
+    console.error('Config update error:', err);
+    res.status(500).json({ success: false, message: 'Failed to update configuration.' });
+  }
+});
+
+router.post('/verify-business', requireAuth, async (req, res) => {
+  try {
+    const { accessToken, phoneNumberId } = req.body;
+    const result = await verifyBusinessApi(accessToken, phoneNumberId);
+    
+    if (result.success) {
+      await WAConfig.findOneAndUpdate(
+        { id: 'primary' },
+        { 
+          'businessApi.accessToken': accessToken,
+          'businessApi.phoneNumberId': phoneNumberId,
+          'businessApi.verified': true
+        },
+        { upsert: true }
+      );
+    }
+    
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Verification failed due to server error.' });
+  }
 });
 
 router.get('/logs', requireAuth, async (req, res) => {

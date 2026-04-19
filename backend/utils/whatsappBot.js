@@ -12,6 +12,8 @@ import P from 'pino';
 import qrcode from 'qrcode-terminal';
 import WAState from '../models/WAState.js';
 import WALog from '../models/WALog.js';
+import WAConfig from '../models/WAConfig.js';
+import { sendBusinessApiMessage } from './whatsappBusinessApi.js';
 
 async function logWAEvent(event, message) {
   try {
@@ -23,7 +25,7 @@ async function logWAEvent(event, message) {
 
 let sock = null;
 let isInitializing = false;
-let waState = { status: 'INITIALIZING', qr: null, user: null };
+let waState = { status: 'INITIALIZING', qr: null, user: null, pairingCode: null };
 const SESSION_ID = process.env.WA_SESSION_ID || 'rfc_gym_session';
 
 // Reconnection management
@@ -172,6 +174,10 @@ export async function initWhatsApp(sessionId = SESSION_ID, force = false){
     
     const logger = P({ level: 'warn' });
     
+    // Check configuration for connection method
+    const config = await WAConfig.findOne({ id: 'primary' });
+    const connectionMethod = config?.connectionMethod || 'qr';
+
     sock = makeWASocket({ 
       auth: {
         creds: state.creds,
@@ -180,16 +186,33 @@ export async function initWhatsApp(sessionId = SESSION_ID, force = false){
       logger, 
       version,
       printQRInTerminal: false,
-      browser: ['RFC Gym Admin', 'Chrome', '4.0.0'],
-      // CRITICAL: Disable history sync to keep memory usage low (prevents Render crashes)
+      browser: ['Ubuntu', 'Chrome', '20.0.04'],
       syncFullHistory: false,
       shouldSyncHistoryMessage: () => false,
-      // Aggressive keep-alive
       keepAliveIntervalMs: 15_000,
       retryRequestDelayMs: 500,
       connectTimeoutMs: 60_000,
-      defaultQueryTimeoutMs: 0, // no timeout
+      defaultQueryTimeoutMs: 0, 
     });
+
+    // Handle Pairing Code if requested
+    if (connectionMethod === 'pairing' && !sock.authState.creds.registered) {
+      if (config.pairingPhone) {
+        console.log(`📲 Requesting pairing code for ${config.pairingPhone}...`);
+        setTimeout(async () => {
+          try {
+            const cleanPhone = config.pairingPhone.replace(/\D/g, '');
+            const code = await sock.requestPairingCode(cleanPhone);
+            waState = { ...waState, status: 'PAIRING_CODE_READY', pairingCode: code };
+            console.log(`🔢 Pairing Code generated: ${code}`);
+            logWAEvent('PAIRING_CODE', `Generated for ${config.pairingPhone}`);
+          } catch (err) {
+            console.error('❌ Failed to generate pairing code:', err.message);
+            logWAEvent('PAIRING_ERROR', err.message);
+          }
+        }, 3000); // Small delay to ensure socket is ready
+      }
+    }
 
     // Store the sessionId in a closure-safe way for this socket instance
     const currentSock = sock;
@@ -316,6 +339,13 @@ function formatPhoneForBaileys(phone){
 export async function sendText(phone, text){
   console.log(`📤 Attempting to send message to ${phone}...`);
   try{
+    // Check if we should use Business API instead of Baileys
+    const config = await WAConfig.findOne({ id: 'primary' });
+    if (config?.connectionMethod === 'business_api') {
+      console.log('🌐 Routing message through WhatsApp Business API...');
+      return await sendBusinessApiMessage(phone, text);
+    }
+
     if(!sock?.user) {
       console.log('📡 WhatsApp not connected. Attempting to initialize...');
       await initWhatsApp(SESSION_ID);
