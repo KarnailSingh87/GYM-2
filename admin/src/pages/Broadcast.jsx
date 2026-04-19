@@ -7,7 +7,7 @@ export default function Broadcast() {
   const [status, setStatus] = useState(null)
   const [loading, setLoading] = useState(false)
   const [waStatus, setWaStatus] = useState({ connected: false })
-  const apiUrl = import.meta.env.DEV ? 'http://localhost:5005/api' : 'https://gym-2-1xb9.onrender.com/api'
+  const apiUrl = import.meta.env.DEV ? 'http://localhost:5005/api' : import.meta.env.VITE_API_URL
 
   useEffect(() => {
     if (!token) return

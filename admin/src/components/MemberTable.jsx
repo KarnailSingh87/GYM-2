@@ -180,7 +180,7 @@ export default function MemberTable(){
   const [editingMember, setEditingMember] = useState(null)
   const [searchTerm, setSearchTerm] = useState('')
 
-  const apiUrl = import.meta.env.DEV ? 'http://localhost:5005/api' : 'https://gym-2-1xb9.onrender.com/api';
+  const apiUrl = import.meta.env.DEV ? 'http://localhost:5005/api' : import.meta.env.VITE_API_URL;
   async function fetchMembers(){
     if(!token) return
     setLoading(true)

@@ -64,7 +64,7 @@ export default function AddMember({ onNavigate }) {
       return
     }
     setLoading(true)
-    const apiUrl = import.meta.env.DEV ? 'http://localhost:5005/api' : 'https://gym-2-1xb9.onrender.com/api';
+    const apiUrl = import.meta.env.DEV ? 'http://localhost:5005/api' : import.meta.env.VITE_API_URL;
     try {
       const res = await fetch(`${apiUrl}/members`, {
         method: 'POST',
