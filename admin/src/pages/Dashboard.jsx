@@ -14,13 +14,30 @@ function Dashboard(){
   useEffect(()=>{
     if(!token) return
     fetch(`${apiUrl}/members`, { headers: { Authorization: `Bearer ${token}` } })
-      .then(r=>r.json())
-      .then(d=>{ if(d.members) setMembers(d.members); else setError('Unable to fetch') })
+      .then(r=>{
+        if (r.status === 401) {
+          localStorage.removeItem('admin_token');
+          window.location.reload();
+          return;
+        }
+        return r.json();
+      })
+      .then(d=>{ 
+        if(d && d.members) setMembers(d.members); 
+        else if (d) setError('Unable to fetch');
+      })
       .catch(e=>setError(e.message))
 
     fetch(`${apiUrl}/whatsapp/status`, { headers: { Authorization: `Bearer ${token}` } })
-      .then(r=>r.json())
-      .then(d=>setWaStatus(d))
+      .then(r=>{
+        if (r.status === 401) {
+          localStorage.removeItem('admin_token');
+          window.location.reload();
+          return;
+        }
+        return r.json();
+      })
+      .then(d=>{ if(d) setWaStatus(d) })
       .catch(e=>console.error('Failed to fetch WA status', e))
   }, [token])
 
@@ -129,7 +146,7 @@ function Dashboard(){
         <div className="lg:col-span-2 glass-card p-5 md:p-6 rounded-2xl relative overflow-hidden">
           <h3 className="text-sm font-semibold tracking-wide text-gray-400 uppercase mb-4">Revenue Trend (Last 6 Months)</h3>
           <div className="h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
               <AreaChart data={trendsData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
@@ -154,7 +171,7 @@ function Dashboard(){
         <div className="glass-card p-5 md:p-6 rounded-2xl relative overflow-hidden flex flex-col justify-center items-center">
           <h3 className="text-sm font-semibold tracking-wide text-gray-400 uppercase self-start w-full mb-2">Member Status</h3>
           <div className="h-48 w-full relative">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
               <PieChart>
                 <Pie
                   data={pieData}
@@ -186,7 +203,7 @@ function Dashboard(){
         <div className="lg:col-span-3 glass-card p-5 md:p-6 rounded-2xl relative overflow-hidden">
           <h3 className="text-sm font-semibold tracking-wide text-gray-400 uppercase mb-4">Sign Up Trends (Last 6 Months)</h3>
           <div className="h-56 w-full">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
               <BarChart data={trendsData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
                 <XAxis dataKey="name" stroke="#ffffff50" fontSize={12} tickLine={false} axisLine={false} />

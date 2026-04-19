@@ -1,11 +1,11 @@
 import { 
   makeWASocket, 
   useMultiFileAuthState, 
+  makeCacheableSignalKeyStore,
   fetchLatestBaileysVersion, 
-  DisconnectReason,
-  BufferJSON,
-  proto
+  DisconnectReason
 } from '@whiskeysockets/baileys';
+import { Boom } from '@hapi/boom';
 import fs from 'fs';
 import path from 'path';
 import P from 'pino';
@@ -15,7 +15,12 @@ import WAState from '../models/WAState.js';
 let sock = null;
 let isInitializing = false;
 let waState = { status: 'INITIALIZING', qr: null, user: null };
-const SESSION_ID = 'rfc_gym_session';
+const SESSION_ID = process.env.WA_SESSION_ID || 'rfc_gym_session';
+
+// Reconnection management
+const MAX_RECONNECT_ATTEMPTS = 5;
+let reconnectAttempts = 0;
+let reconnectTimer = null;
 
 export function getWhatsAppStatus() {
   return {
@@ -24,21 +29,62 @@ export function getWhatsAppStatus() {
   };
 }
 
+/**
+ * Safely close and clean up the current socket without sending 
+ * a logout message to WhatsApp servers (preserves ability to reconnect).
+ */
+function destroySocket() {
+  if (!sock) return;
+  
+  const oldSock = sock;
+  sock = null; // Clear reference first to prevent stale usage
+  
+  try {
+    // Remove all event listeners to prevent memory leaks and ghost handlers
+    oldSock.ev.removeAllListeners('connection.update');
+    oldSock.ev.removeAllListeners('creds.update');
+    
+    // Close the connection with a proper error object
+    oldSock.end(new Boom('Socket replaced', { statusCode: DisconnectReason.connectionClosed }));
+  } catch (e) {
+    // Socket may already be closed
+    console.log('Socket cleanup (non-critical):', e.message);
+  }
+}
+
 export async function logoutWhatsApp() {
   try {
-    isInitializing = false;
-    waState = { status: 'DISCONNECTED', qr: null, user: null };
-    
     if (sock) {
+      const oldSock = sock;
+      sock = null; // Immediately clear to prevent usage during cleanup
+      
       try {
-        sock.ev.removeAllListeners();
-        await sock.logout().catch(() => {});
-        sock.end();
+        // logout() sends a logout message to WA servers AND internally calls end()
+        // so we should NOT call end() separately afterwards
+        await oldSock.logout();
       } catch (e) {
-        console.log('Socket already dead, continuing cleanup...');
+        // If logout fails (e.g., already disconnected), just force-close
+        try {
+          oldSock.ev.removeAllListeners('connection.update');
+          oldSock.ev.removeAllListeners('creds.update');
+          oldSock.end(new Boom('Force close after logout failure', { 
+            statusCode: DisconnectReason.loggedOut 
+          }));
+        } catch (_) {
+          // Already fully closed
+        }
+        console.log('Socket logout skipped (already disconnected):', e.message);
       }
-      sock = null;
     }
+
+    // Reset state
+    isInitializing = false;
+    reconnectAttempts = 0;
+    if (reconnectTimer) {
+      clearTimeout(reconnectTimer);
+      reconnectTimer = null;
+    }
+    waState = { status: 'DISCONNECTED', qr: null, user: null };
 
     // CLOUD SYNC: Remove the saved session from MongoDB so it doesn't restore bad credentials
     try {
@@ -57,7 +103,10 @@ export async function logoutWhatsApp() {
       }
     }
     
-    // Auto initiate a completely fresh unlinked session to immediately bring up a QR Code
+    // Reset state so UI shows initializing instead of stuck disconnected
+    waState = { status: 'INITIALIZING', qr: null, user: null };
+
+    // Auto initiate a completely fresh unlinked session instantly to immediately bring up a QR Code
     setTimeout(() => {
       initWhatsApp(SESSION_ID, true);
     }, 1000);
@@ -70,21 +119,24 @@ export async function logoutWhatsApp() {
 }
 
 export async function initWhatsApp(sessionId = SESSION_ID, force = false){
+  // If force, clean up old socket properly first
   if (force) {
-    if (sock) {
-      try { 
-        sock.ev.removeAllListeners();
-        sock.end(); 
-      } catch(e) {}
-    }
-    sock = null;
+    destroySocket();
     isInitializing = false;
+    reconnectAttempts = 0;
+    if (reconnectTimer) {
+      clearTimeout(reconnectTimer);
+      reconnectTimer = null;
+    }
   }
 
+  // Already connected and not forcing
   if (sock?.user && !isInitializing) return sock;
+  // Already initializing and not forcing
   if (isInitializing && !force) return null;
   
   isInitializing = true;
+  waState = { status: 'INITIALIZING', qr: null, user: null };
   const sessionsDir = path.resolve(process.cwd(), 'sessions', sessionId);
   if(!fs.existsSync(sessionsDir)) fs.mkdirSync(sessionsDir, { recursive: true });
   
@@ -103,58 +155,108 @@ export async function initWhatsApp(sessionId = SESSION_ID, force = false){
     }
   }
 
-  const { state, saveCreds } = await useMultiFileAuthState(sessionsDir);
-  const { version } = await fetchLatestBaileysVersion();
-  
-  sock = makeWASocket({ 
-    auth: state, 
-    logger: P({ level: 'silent' }), 
-    version,
-    printQRInTerminal: false,
-    browser: ['RFC Gym Admin', 'Chrome', '4.0.0']
-  });
-
-  sock.ev.on('connection.update', (update) => {
-    const { connection, lastDisconnect, qr } = update;
+  try {
+    const { state, saveCreds } = await useMultiFileAuthState(sessionsDir);
+    const { version } = await fetchLatestBaileysVersion();
     
-    if(qr) {
-      waState = { ...waState, status: 'QR_READY', qr };
-    }
+    const logger = P({ level: 'silent' });
+    
+    sock = makeWASocket({ 
+      auth: {
+        creds: state.creds,
+        /** Use makeCacheableSignalKeyStore for better performance and fewer I/O ops */
+        keys: makeCacheableSignalKeyStore(state.keys, logger)
+      }, 
+      logger, 
+      version,
+      printQRInTerminal: false,
+      browser: ['RFC Gym Admin', 'Chrome', '4.0.0'],
+      // Prevent Baileys from retrying messages indefinitely
+      retryRequestDelayMs: 250,
+      connectTimeoutMs: 30_000,
+    });
 
-    if(connection === 'close'){
-      const code = lastDisconnect?.error?.output?.statusCode;
-      const shouldReconnect = code !== DisconnectReason.loggedOut;
+    // Store the sessionId in a closure-safe way for this socket instance
+    const currentSock = sock;
+
+    currentSock.ev.on('connection.update', (update) => {
+      const { connection, lastDisconnect, qr } = update;
       
-      if(shouldReconnect){
-        isInitializing = false;
-        setTimeout(() => initWhatsApp(sessionId), 5000);
-      } else {
-        isInitializing = false;
-        waState = { status: 'DISCONNECTED', qr: null, user: null };
+      if(qr) {
+        waState = { ...waState, status: 'QR_READY', qr };
       }
-    }
-    
-    if(connection === 'open'){
-      waState = { status: 'CONNECTED', qr: null, user: sock.user };
-      isInitializing = false;
-    }
-  });
 
-  sock.ev.on('creds.update', async () => {
-    await saveCreds();
-    // CLOUD SYNC: Save to MongoDB for persistence
-    try {
-      const credsData = fs.readFileSync(credsFile, 'utf-8');
-      await WAState.findOneAndUpdate(
-        { id: sessionId },
-        { data: credsData },
-        { upsert: true }
-      );
-    } catch (err) {
-      console.error('Failed to sync creds to Mongo', err);
-    }
-  });
-  return sock;
+      if(connection === 'close'){
+        // Only handle if this is still the active socket
+        if (currentSock !== sock && sock !== null) {
+          return; // This handler is from an old socket; ignore
+        }
+        
+        const statusCode = lastDisconnect?.error?.output?.statusCode;
+        const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
+        
+        console.log(`🔌 Connection closed. Status: ${statusCode}, Reconnect: ${shouldReconnect}`);
+        
+        isInitializing = false;
+        
+        if(shouldReconnect){
+          reconnectAttempts++;
+          
+          if (reconnectAttempts > MAX_RECONNECT_ATTEMPTS) {
+            console.error(`❌ Max reconnect attempts (${MAX_RECONNECT_ATTEMPTS}) exceeded. Giving up.`);
+            waState = { status: 'DISCONNECTED', qr: null, user: null };
+            reconnectAttempts = 0;
+            return;
+          }
+          
+          // Exponential backoff: 2s, 4s, 8s, 16s, 32s
+          const delay = Math.min(2000 * Math.pow(2, reconnectAttempts - 1), 32000);
+          console.log(`🔄 Reconnecting in ${delay / 1000}s (attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})...`);
+          
+          if (reconnectTimer) clearTimeout(reconnectTimer);
+          reconnectTimer = setTimeout(() => {
+            reconnectTimer = null;
+            initWhatsApp(sessionId);
+          }, delay);
+        } else {
+          // Logged out — don't auto reconnect
+          waState = { status: 'DISCONNECTED', qr: null, user: null };
+          reconnectAttempts = 0;
+        }
+      }
+      
+      if(connection === 'open'){
+        waState = { status: 'CONNECTED', qr: null, user: currentSock.user };
+        isInitializing = false;
+        reconnectAttempts = 0; // Reset on successful connection
+        console.log('✅ WhatsApp connected successfully!');
+      }
+    });
+
+    currentSock.ev.on('creds.update', async () => {
+      await saveCreds();
+      // CLOUD SYNC: Save to MongoDB for persistence
+      try {
+        if (fs.existsSync(credsFile)) {
+          const credsData = fs.readFileSync(credsFile, 'utf-8');
+          await WAState.findOneAndUpdate(
+            { id: sessionId },
+            { data: credsData },
+            { upsert: true }
+          );
+        }
+      } catch (err) {
+        console.error('Failed to sync creds to Mongo', err);
+      }
+    });
+
+    return currentSock;
+  } catch (err) {
+    console.error('❌ initWhatsApp error:', err.message);
+    isInitializing = false;
+    waState = { status: 'DISCONNECTED', qr: null, user: null };
+    return null;
+  }
 }
 
 function formatPhoneForBaileys(phone){
@@ -170,27 +272,33 @@ export async function sendText(phone, text){
     if(!sock?.user) {
       console.log('📡 WhatsApp not connected. Attempting to initialize...');
       await initWhatsApp(SESSION_ID);
-      // Wait up to 5s if connecting
+      // Wait up to 10s for connection (with progressive checks)
       let attempts = 0;
-      while(!sock?.user && attempts < 5) {
+      while(!sock?.user && attempts < 10) {
         await new Promise(r => setTimeout(r, 1000));
         attempts++;
       }
     }
     
     if(!sock?.user) {
-      console.error('❌ WhatsApp connection failed after 5 seconds.');
+      console.error('❌ WhatsApp connection failed after 10 seconds.');
       throw new Error('WhatsApp not connected');
     }
 
     const jid = formatPhoneForBaileys(phone) + '@s.whatsapp.net';
     console.log(`🔗 Target JID: ${jid}`);
     
-    await sock.sendMessage(jid, { text });
+    // Capture current socket reference to avoid sending on a stale socket
+    const currentSock = sock;
+    if (!currentSock?.user) {
+      throw new Error('WhatsApp socket became unavailable');
+    }
+    
+    await currentSock.sendMessage(jid, { text });
     console.log('✅ Message sent successfully!');
     return true;
   } catch(err){
-    console.error('❌ sendText error', err.message);
+    console.error('❌ sendText error:', err.message);
     return false;
   }
 }

@@ -82,6 +82,11 @@ function EditMemberModal({ member, onClose, onSuccess, token, apiUrl }) {
           name, phone, address, joinDate, timeSlot, membershipType, paymentStatus, amountReceived: Number(amountReceived) || 0
         })
       })
+      if (res.status === 401) {
+        localStorage.removeItem('admin_token');
+        window.location.reload();
+        return;
+      }
       if(res.ok) {
         onSuccess()
       } else {
@@ -186,6 +191,11 @@ export default function MemberTable(){
     setLoading(true)
     try {
       const res = await fetch(`${apiUrl}/members`, { headers: { Authorization: `Bearer ${token}` } })
+      if (res.status === 401) {
+        localStorage.removeItem('admin_token');
+        window.location.reload();
+        return;
+      }
       const data = await res.json()
       setMembers(data.members || [])
     } catch (e) {
@@ -199,7 +209,12 @@ export default function MemberTable(){
 
   async function removeMember(id){
     if(!window.confirm('Delete this member?')) return
-    await fetch(`${apiUrl}/members/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } })
+    const res = await fetch(`${apiUrl}/members/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } })
+    if (res.status === 401) {
+      localStorage.removeItem('admin_token');
+      window.location.reload();
+      return;
+    }
     fetchMembers()
   }
 

@@ -13,6 +13,11 @@ export default function Settings() {
       const res = await fetch(`${apiUrl}/whatsapp/status`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
+      if (res.status === 401) {
+        localStorage.removeItem('admin_token');
+        window.location.reload();
+        return;
+      }
       const data = await res.json();
       setStatus(data);
     } catch (err) {
@@ -31,10 +36,15 @@ export default function Settings() {
   async function handleRefresh() {
     try {
       setLoading(true);
-      await fetch(`${apiUrl}/whatsapp/refresh`, {
+      const res = await fetch(`${apiUrl}/whatsapp/refresh`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
+      if (res.status === 401) {
+        localStorage.removeItem('admin_token');
+        window.location.reload();
+        return;
+      }
       fetchStatus();
     } catch (err) {
       console.error('Failed to refresh', err);
@@ -51,6 +61,14 @@ export default function Settings() {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
+      
+      if (resp.status === 401) {
+        // Token is already invalid, just clear local session
+        localStorage.removeItem('admin_token');
+        window.location.reload();
+        return;
+      }
+
       if (!resp.ok) throw new Error('Logout request failed');
       
       fetchStatus();
@@ -151,7 +169,7 @@ export default function Settings() {
                   disabled={logoutLoading}
                   className="w-full sm:flex-1 py-2.5 md:py-3 px-4 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-500 rounded-lg md:rounded-xl font-bold text-xs md:text-sm transition-all active:scale-95 disabled:opacity-50"
                 >
-                  {logoutLoading ? 'Working...' : 'Logout WhatsApp'}
+                  {logoutLoading ? 'Disconnecting...' : 'Disconnect Device'}
                 </button>
                 <button 
                   onClick={handleRefresh}

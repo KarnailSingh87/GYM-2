@@ -12,8 +12,15 @@ export default function Broadcast() {
   useEffect(() => {
     if (!token) return
     fetch(`${apiUrl}/whatsapp/status`, { headers: { Authorization: `Bearer ${token}` } })
-      .then(r => r.json())
-      .then(d => setWaStatus(d))
+      .then(r => {
+        if (r.status === 401) {
+          localStorage.removeItem('admin_token');
+          window.location.reload();
+          return;
+        }
+        return r.json();
+      })
+      .then(d => { if(d) setWaStatus(d) })
       .catch(e => console.error('Failed to fetch WA status', e))
   }, [token, apiUrl])
 
@@ -39,6 +46,12 @@ export default function Broadcast() {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ message: message.trim() })
       })
+
+      if (res.status === 401) {
+        localStorage.removeItem('admin_token');
+        window.location.reload();
+        return;
+      }
 
       const data = await res.json()
 

@@ -9,6 +9,7 @@
     "test": "jest --runInBand"
   },
   "dependencies": {
+    "@hapi/boom": "^10.0.1",
     "@whiskeysockets/baileys": "^7.0.0-rc.9",
     "cors": "^2.8.5",
     "dotenv": "^16.0.0",

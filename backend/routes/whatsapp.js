@@ -10,8 +10,13 @@ router.get('/status', requireAuth, (req, res) => {
 });
 
 router.post('/refresh', requireAuth, async (req, res) => {
-  await initWhatsApp(undefined, true);
-  res.json({ success: true, message: 'Re-initializing WhatsApp Engine...' });
+  try {
+    await initWhatsApp(undefined, true);
+    res.json({ success: true, message: 'Re-initializing WhatsApp Engine...' });
+  } catch (err) {
+    console.error('Error refreshing WhatsApp:', err);
+    res.status(500).json({ success: false, message: 'Failed to re-initialize WhatsApp.' });
+  }
 });
 
 router.post('/logout', requireAuth, async (req, res) => {

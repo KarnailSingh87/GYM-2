@@ -82,6 +82,13 @@ export default function AddMember({ onNavigate }) {
           customMessage
         })
       })
+
+      if (res.status === 401) {
+        localStorage.removeItem('admin_token');
+        window.location.reload();
+        return;
+      }
+
       const data = await res.json()
       if(res.ok){
         let paymentMsg = '';
