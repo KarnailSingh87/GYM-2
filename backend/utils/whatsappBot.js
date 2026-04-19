@@ -141,6 +141,18 @@ export async function initWhatsApp(sessionId = SESSION_ID, force = false){
       clearTimeout(reconnectTimer);
       reconnectTimer = null;
     }
+
+    // CRITICAL: Wipe local session files on force-init to prevent "Could not link device" errors.
+    // Pairing codes only work correctly on a completely fresh session.
+    const sessionsDir = path.resolve(process.cwd(), 'sessions', sessionId);
+    if (fs.existsSync(sessionsDir)) {
+      try {
+        fs.rmSync(sessionsDir, { recursive: true, force: true });
+        console.log('🧹 Session directory wiped for a clean start.');
+      } catch (e) {
+        console.warn('⚠️ Session wipe in-progress or failed:', e.message);
+      }
+    }
   }
 
   // Already connected and not forcing
@@ -156,7 +168,8 @@ export async function initWhatsApp(sessionId = SESSION_ID, force = false){
   const credsFile = path.join(sessionsDir, 'creds.json');
   
   // CLOUD SYNC: Restore from MongoDB if local file is missing (For Render/Deployment)
-  if (!fs.existsSync(credsFile)) {
+  // But ONLY if we are not forcing a clean restart.
+  if (!fs.existsSync(credsFile) && !force) {
     try {
       const savedState = await WAState.findOne({ id: sessionId });
       if (savedState) {
@@ -186,7 +199,7 @@ export async function initWhatsApp(sessionId = SESSION_ID, force = false){
       logger, 
       version,
       printQRInTerminal: false,
-      browser: ['Ubuntu', 'Chrome', '20.0.04'],
+      browser: ['Mac OS', 'Chrome', '121.0.6167.85'],
       syncFullHistory: false,
       shouldSyncHistoryMessage: () => false,
       keepAliveIntervalMs: 15_000,
