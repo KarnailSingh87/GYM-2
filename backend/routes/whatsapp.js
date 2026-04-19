@@ -1,6 +1,7 @@
 import express from 'express';
 import { requireAuth } from '../middleware/auth.js';
-import { getWhatsAppStatus, logoutWhatsApp, initWhatsApp } from '../utils/whatsappBot.js';
+import { getWhatsAppStatus, logoutWhatsApp, initWhatsApp, sendText } from '../utils/whatsappBot.js';
+import Member from '../models/Member.js';
 
 const router = express.Router();
 
@@ -9,7 +10,7 @@ router.get('/status', requireAuth, (req, res) => {
 });
 
 router.post('/refresh', requireAuth, async (req, res) => {
-  await initWhatsApp('default', true);
+  await initWhatsApp(undefined, true);
   res.json({ success: true, message: 'Re-initializing WhatsApp Engine...' });
 });
 
@@ -19,6 +20,62 @@ router.post('/logout', requireAuth, async (req, res) => {
     res.json({ success: true, message: 'Logged out successfully.' });
   } else {
     res.status(500).json({ success: false, message: 'Failed to logout.' });
+  }
+});
+
+router.post('/broadcast', requireAuth, async (req, res) => {
+  try {
+    const { message } = req.body;
+    if (!message) {
+      return res.status(400).json({ success: false, message: 'Message is required' });
+    }
+
+    const { connected } = getWhatsAppStatus();
+    if (!connected) {
+      return res.status(400).json({ success: false, message: 'WhatsApp is not connected' });
+    }
+
+    // Get Active members
+    const today = new Date();
+    const activeMembers = await Member.find({ expiryDate: { $gt: today } });
+
+    if (activeMembers.length === 0) {
+      return res.status(400).json({ success: false, message: 'No active members found to send messages to.' });
+    }
+
+    // We don't want to block the request since broadcasting to a large number of members could take long.
+    // Respond immediately and process in background.
+    res.json({ success: true, message: `Broadcasting started to ${activeMembers.length} active members.` });
+
+    const sendBroadcast = async () => {
+      let successCount = 0;
+      let failCount = 0;
+      
+      for (const member of activeMembers) {
+        if (!member.phone) continue;
+        
+        try {
+          const formattedMsg = `🔔 *RFC GYM ANNOUNCEMENT* 🔔\n\nHi *${member.name}*,\n\n${message}\n\n_Stay Fit, Stay Strong! 💪_`;
+          const result = await sendText(member.phone, formattedMsg);
+          if (result) successCount++;
+          else failCount++;
+          
+          // Small delay to avoid WhatsApp rate limits
+          await new Promise(r => setTimeout(r, 2000));
+        } catch (err) {
+          console.error(`Failed to send broadcast to ${member.name}:`, err);
+          failCount++;
+        }
+      }
+      console.log(`📢 Broadcast complete: ${successCount} successful, ${failCount} failed.`);
+    };
+
+    // Run in background
+    sendBroadcast();
+
+  } catch (err) {
+    console.error('Error in broadcast route:', err);
+    res.status(500).json({ success: false, message: 'Server error during broadcast' });
   }
 });
 

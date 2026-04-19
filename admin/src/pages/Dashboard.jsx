@@ -1,19 +1,27 @@
 import React, { useEffect, useState, useContext } from 'react'
 import { AuthContext } from '../context/AuthContext'
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, Legend } from 'recharts'
 
 function Dashboard(){
   const [members, setMembers] = useState([])
   const [error, setError] = useState(null)
   const [showPending, setShowPending] = useState(false)
+  const [waStatus, setWaStatus] = useState({ connected: false })
 
   const { token } = useContext(AuthContext)
   const apiUrl = import.meta.env.DEV ? 'http://localhost:5005/api' : 'https://gym-2-1xb9.onrender.com/api';
+
   useEffect(()=>{
     if(!token) return
     fetch(`${apiUrl}/members`, { headers: { Authorization: `Bearer ${token}` } })
       .then(r=>r.json())
       .then(d=>{ if(d.members) setMembers(d.members); else setError('Unable to fetch') })
       .catch(e=>setError(e.message))
+
+    fetch(`${apiUrl}/whatsapp/status`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r=>r.json())
+      .then(d=>setWaStatus(d))
+      .catch(e=>console.error('Failed to fetch WA status', e))
   }, [token])
 
   const activeMembers = members.filter(m => new Date(m.expiryDate) > new Date())
@@ -40,6 +48,43 @@ function Dashboard(){
     return acc + (rateCard[m.membershipType] || 0);
   }, 0);
 
+  // Generate chart data based on member join dates (last 6 months)
+  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const trendsData = [];
+  const currentMonthIdx = new Date().getMonth();
+  const currentYear = new Date().getFullYear();
+  
+  for(let i = 5; i >= 0; i--) {
+    let d = new Date(currentYear, currentMonthIdx - i, 1);
+    let monthLabel = monthNames[d.getMonth()];
+    
+    // Revenue & Signups for this month
+    let monthRevenue = 0;
+    let monthSignups = 0;
+
+    members.forEach(m => {
+      const joinD = new Date(m.joinDate);
+      if (joinD.getMonth() === d.getMonth() && joinD.getFullYear() === d.getFullYear()) {
+        monthSignups++;
+        if (m.paymentStatus !== 'pending' && m.paymentStatus !== 'overdue') {
+          monthRevenue += m.amountReceived > 0 ? m.amountReceived : (rateCard[m.membershipType] || 0);
+        }
+      }
+    });
+
+    trendsData.push({
+      name: monthLabel,
+      revenue: monthRevenue,
+      signups: monthSignups
+    });
+  }
+
+  const pieData = [
+    { name: 'Active', value: activeMembers.length },
+    { name: 'Expired', value: members.length - activeMembers.length }
+  ];
+  const COLORS = ['#10b981', '#ef4444'];
+
   const stats = [
     { label: 'Total Members', value: total, icon: '👥', color: 'from-blue-500/20 to-cyan-400/20', action: () => setShowPending(false) },
     { label: 'Pending Fees', value: pendingCount, icon: '⏳', color: 'from-amber-500/20 to-orange-400/20', action: () => setShowPending(true) },
@@ -48,9 +93,17 @@ function Dashboard(){
 
   return (
     <div className="space-y-6 md:space-y-8 pb-10">
-      <div>
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Overview</h1>
-        <p className="text-sm md:text-base text-gray-400 mt-1">Welcome back, hope you have a productive day.</p>
+      <div className="flex justify-between items-start">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Overview</h1>
+          <p className="text-sm md:text-base text-gray-400 mt-1">Welcome back, hope you have a productive day.</p>
+        </div>
+        <div className="flex items-center gap-2 bg-white/5 py-1.5 px-3 rounded-full border border-white/10">
+          <div className={`w-2.5 h-2.5 rounded-full ${waStatus.connected ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`}></div>
+          <span className="text-xs font-semibold text-gray-300">
+            WA {waStatus.connected ? 'Connected' : 'Disconnected'}
+          </span>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
@@ -68,6 +121,89 @@ function Dashboard(){
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+        {/* Revenue Trend Area Chart */}
+        <div className="lg:col-span-2 glass-card p-5 md:p-6 rounded-2xl relative overflow-hidden">
+          <h3 className="text-sm font-semibold tracking-wide text-gray-400 uppercase mb-4">Revenue Trend (Last 6 Months)</h3>
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={trendsData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#06b6d4" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
+                <XAxis dataKey="name" stroke="#ffffff50" fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis stroke="#ffffff50" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `₹${value}`} />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#111827', borderColor: '#ffffff10', borderRadius: '8px' }}
+                  itemStyle={{ color: '#0ab5d4' }}
+                />
+                <Area type="monotone" dataKey="revenue" stroke="#06b6d4" strokeWidth={3} fillOpacity={1} fill="url(#colorRev)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Member Status Pie Chart */}
+        <div className="glass-card p-5 md:p-6 rounded-2xl relative overflow-hidden flex flex-col justify-center items-center">
+          <h3 className="text-sm font-semibold tracking-wide text-gray-400 uppercase self-start w-full mb-2">Member Status</h3>
+          <div className="h-48 w-full relative">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={pieData}
+                  innerRadius={60}
+                  outerRadius={80}
+                  paddingAngle={5}
+                  dataKey="value"
+                  stroke="none"
+                >
+                  {pieData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip contentStyle={{ backgroundColor: '#111827', borderColor: '#ffffff10', borderRadius: '8px' }} />
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+              <span className="text-2xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">{activeMembers.length}</span>
+              <span className="text-xs text-gray-500 uppercase tracking-widest font-semibold">Active</span>
+            </div>
+          </div>
+          <div className="flex gap-4 mt-2 w-full justify-center">
+            <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-emerald-500"></div><span className="text-xs text-gray-400">Active</span></div>
+            <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-red-500"></div><span className="text-xs text-gray-400">Expired</span></div>
+          </div>
+        </div>
+        
+        {/* Sign Ups Bar Chart */}
+        <div className="lg:col-span-3 glass-card p-5 md:p-6 rounded-2xl relative overflow-hidden">
+          <h3 className="text-sm font-semibold tracking-wide text-gray-400 uppercase mb-4">Sign Up Trends (Last 6 Months)</h3>
+          <div className="h-56 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={trendsData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
+                <XAxis dataKey="name" stroke="#ffffff50" fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis stroke="#ffffff50" fontSize={12} tickLine={false} axisLine={false} />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#111827', borderColor: '#ffffff10', borderRadius: '8px' }}
+                  cursor={{ fill: '#ffffff05' }}
+                />
+                <Bar dataKey="signups" fill="#3b82f6" radius={[4, 4, 0, 0]}>
+                  {trendsData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={'#3b82f6'} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
       </div>
 
       <div className="glass-card rounded-2xl overflow-hidden">

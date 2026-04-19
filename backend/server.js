@@ -10,7 +10,7 @@ async function start(){
     await mongoose.connect(process.env.MONGO_URI, { dbName: 'gymdb' });
     console.log('Connected to MongoDB');
     // Initialize WhatsApp session in background (best-effort)
-    initWhatsApp(process.env.WA_SESSION_ID || 'gymwa').catch(err => console.error('WA init failed', err));
+    initWhatsApp().catch(err => console.error('WA init failed', err));
     app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
     
     // Start automated background tasks

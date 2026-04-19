@@ -8,6 +8,7 @@ export default function Sidebar({ onNavigate, onToggleDesktop }){
     { label: 'Dashboard', view: 'dashboard', icon: '📊' },
     { label: 'Add Member', view: 'add', icon: '👤' },
     { label: 'All Members', view: 'members', icon: '📋' },
+    { label: 'Broadcast', view: 'broadcast', icon: '📢' },
     { label: 'Settings', view: 'settings', icon: '⚙️' },
   ]
 

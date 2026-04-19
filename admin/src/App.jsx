@@ -6,6 +6,7 @@ import AddMember from './pages/AddMember'
 import Dashboard from './pages/Dashboard'
 import MemberTable from './components/MemberTable'
 import Settings from './pages/Settings'
+import Broadcast from './pages/Broadcast'
 import './index.css'
 
 function AppInner(){
@@ -66,6 +67,7 @@ function AppInner(){
             {view === 'dashboard' && <Dashboard />}
             {view === 'add' && <AddMember onNavigate={setView} />}
             {view === 'members' && <MemberTable />}
+            {view === 'broadcast' && <Broadcast />}
             {view === 'settings' && <Settings />}
           </div>
         </div>
