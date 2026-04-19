@@ -6,6 +6,8 @@ export default function Settings() {
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [logoutLoading, setLogoutLoading] = useState(false);
+  const [testPhone, setTestPhone] = useState('');
+  const [testLoading, setTestLoading] = useState(false);
 
   const host = window.location.hostname;
   const apiUrl = import.meta.env.DEV 
@@ -53,6 +55,29 @@ export default function Settings() {
       console.error('Failed to refresh', err);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleTestMessage() {
+    if(!testPhone) return alert('Please enter a phone number to test.');
+    setTestLoading(true);
+    try {
+      const res = await fetch(`${apiUrl}/whatsapp/test-message`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify({ phone: testPhone })
+      });
+      const data = await res.json();
+      if(data.success) alert('Test message sent! Check your phone.');
+      else alert('Failed: ' + data.message);
+    } catch (err) {
+      console.error(err);
+      alert('Error sending test message.');
+    } finally {
+      setTestLoading(false);
     }
   }
 
@@ -166,21 +191,43 @@ export default function Settings() {
                 </div>
               )}
 
-              <div className="pt-2 md:pt-4 flex flex-col sm:flex-row gap-2 sm:space-x-3 sm:gap-0">
-                <button 
-                  onClick={handleLogout}
-                  disabled={logoutLoading}
-                  className="w-full sm:flex-1 py-2.5 md:py-3 px-4 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-500 rounded-lg md:rounded-xl font-bold text-xs md:text-sm transition-all active:scale-95 disabled:opacity-50"
-                >
-                  {logoutLoading ? 'Disconnecting...' : 'Disconnect Device'}
-                </button>
-                <button 
-                  onClick={handleRefresh}
-                  className="py-3 px-6 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-xl font-bold text-sm transition-all"
-                  title="Force Generate New QR"
-                >
-                  🔄
-                </button>
+              <div className="pt-2 md:pt-4 space-y-3">
+                <div className="flex flex-col sm:flex-row gap-2 sm:space-x-3">
+                  <button 
+                    onClick={handleLogout}
+                    disabled={logoutLoading}
+                    className="w-full sm:flex-1 py-3 px-4 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-500 rounded-xl font-bold text-xs md:text-sm transition-all disabled:opacity-50"
+                  >
+                    {logoutLoading ? 'Disconnecting...' : 'Disconnect Device'}
+                  </button>
+                  <button 
+                    onClick={handleRefresh}
+                    className="flex items-center justify-center py-3 px-6 bg-cyan-500 text-white rounded-xl font-bold text-sm transition-all hover:bg-cyan-400 shadow-lg shadow-cyan-500/20 whitespace-nowrap"
+                    title="Force Reconnect Engine"
+                  >
+                    🔄 Repair Connection
+                  </button>
+                </div>
+
+                <div className="pt-4 border-t border-white/5 space-y-3">
+                  <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest">Connection Tester</div>
+                  <div className="flex gap-2">
+                    <input 
+                      type="tel" 
+                      placeholder="Enter 10-digit number" 
+                      className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-cyan-500/50"
+                      value={testPhone}
+                      onChange={e => setTestPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                    />
+                    <button 
+                      onClick={handleTestMessage}
+                      disabled={testLoading || !status?.connected}
+                      className="px-4 py-2 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-emerald-500/30 transition-all disabled:opacity-50"
+                    >
+                      {testLoading ? 'Sending...' : 'Send Test'}
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           )}

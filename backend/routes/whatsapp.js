@@ -96,4 +96,22 @@ router.post('/broadcast', requireAuth, async (req, res) => {
   }
 });
 
+router.post('/test-message', requireAuth, async (req, res) => {
+  try {
+    const { phone } = req.body;
+    if (!phone) return res.status(400).json({ success: false, message: 'Phone number is required' });
+    
+    const result = await sendText(phone, '✅ *RFC Gym Connection Test*\n\nIf you are reading this, your WhatsApp integration is active and working correctly! 💪');
+    
+    if (result) {
+      res.json({ success: true, message: 'Test message sent successfully!' });
+    } else {
+      res.status(500).json({ success: false, message: 'Failed to send test message. Check your connection status.' });
+    }
+  } catch (err) {
+    console.error('Test message error:', err);
+    res.status(500).json({ success: false, message: 'Server error during test' });
+  }
+});
+
 export default router;

@@ -159,7 +159,7 @@ export async function initWhatsApp(sessionId = SESSION_ID, force = false){
     const { state, saveCreds } = await useMultiFileAuthState(sessionsDir);
     const { version } = await fetchLatestBaileysVersion();
     
-    const logger = P({ level: 'silent' });
+    const logger = P({ level: 'warn' });
     
     sock = makeWASocket({ 
       auth: {
