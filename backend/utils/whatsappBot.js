@@ -369,7 +369,7 @@ export async function sendText(phone, text) {
 // ─────────────────────────────────────────────
 //  Public: send welcome message on member registration
 // ─────────────────────────────────────────────
-export async function sendWelcome(phone, { name, joinDate, expiryDate, timeSlot, paymentStatus, amountReceived, address, customMessage }) {
+export async function sendWelcome(phone, { name, joinDate, expiryDate, timeSlot, paymentStatus, amountReceived, address }) {
   const start = new Date(joinDate).toLocaleDateString('en-IN');
   const end   = new Date(expiryDate).toLocaleDateString('en-IN');
 
@@ -378,14 +378,26 @@ export async function sendWelcome(phone, { name, joinDate, expiryDate, timeSlot,
   else if (paymentStatus === 'cash') paymentText = 'Cash Payment Received ✅';
   else paymentText = 'Payment Pending ⌛';
 
-  let text = `🔥 *WELCOME TO RFC GYM* 🔥\n\nHello *${name}*,\n\nWelcome to the family! Your registration is complete. Here are your details:\n\n*Address:* ${address || 'Not Provided'}\n*Joining Date:* ${start}\n*Expiry Date:* ${end}\n*Time Slot:* ${timeSlot || 'Anytime'}\n*Payment Status:* ${paymentText}\n\nWe are excited to see you crush your goals at *RFC Gym*! 💪`;
+  const text = `🔥 *WELCOME TO RFC GYM* 🔥\n\nHello *${name}*,\n\nWelcome to the family! Your registration is complete. Here are your details:\n\n*Address:* ${address || 'Not Provided'}\n*Joining Date:* ${start}\n*Expiry Date:* ${end}\n*Time Slot:* ${timeSlot || 'Anytime'}\n*Payment Status:* ${paymentText}\n\nWe are excited to see you crush your goals at *RFC Gym*! 💪\n\n_Stay Fit, Stay Strong!_`;
+  return sendText(phone, text);
+}
 
-  if (customMessage?.trim()) {
-    text += `\n\n*Message from Owner:* ${customMessage.trim()}`;
-  }
+// ─────────────────────────────────────────────
+//  Public: send payment receipt
+// ─────────────────────────────────────────────
+export async function sendPaymentReceipt(phone, { name, amountReceived, paymentMethod, expiryDate }){
+  const end = new Date(expiryDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  const method = paymentMethod === 'online' ? 'Online/UPI' : 'Cash';
+  const text = `🎉 *PAYMENT RECEIVED* 🎉\n\nHi *${name}*,\n\nThank you for your payment! We have successfully received *₹${amountReceived}* via ${method}.\n\nYour membership is currently active and will expire on *${end}*.\n\nKeep up the great work at *RFC Gym*! 💪🔥`;
+  return sendText(phone, text);
+}
 
-  text += `\n\n_Stay Fit, Stay Strong!_`;
-
+// ─────────────────────────────────────────────
+//  Public: send payment reminder
+// ─────────────────────────────────────────────
+export async function sendPaymentReminder(phone, { name, amount }){
+  const amountText = amount && amount > 0 ? ` of *₹${amount}*` : '';
+  const text = `⚠️ *PAYMENT REMINDER* ⚠️\n\nHi *${name}*,\n\nThis is a gentle reminder that your gym fee${amountText} is currently pending.\n\nPlease clear your dues at your earliest convenience to enjoy uninterrupted access to *RFC Gym*.\n\nIf you have already paid, please ignore this message. Thank you! 💪`;
   return sendText(phone, text);
 }
 

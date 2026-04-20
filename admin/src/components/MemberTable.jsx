@@ -184,6 +184,7 @@ export default function MemberTable(){
   const [loading, setLoading] = useState(false)
   const [editingMember, setEditingMember] = useState(null)
   const [searchTerm, setSearchTerm] = useState('')
+  const [remindingId, setRemindingId] = useState(null)
 
   const host = window.location.hostname;
   const apiUrl = import.meta.env.DEV 
@@ -219,6 +220,26 @@ export default function MemberTable(){
       return;
     }
     fetchMembers()
+  }
+
+  async function sendReminder(id) {
+    setRemindingId(id)
+    try {
+      const res = await fetch(`${apiUrl}/whatsapp/remind-payment/${id}`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      const data = await res.json()
+      if (res.ok && data.success) {
+        alert('Reminder sent successfully via WhatsApp!')
+      } else {
+        alert(data.message || 'Failed to send reminder.')
+      }
+    } catch (e) {
+      alert('Error sending reminder')
+    } finally {
+      setRemindingId(null)
+    }
   }
 
   function editMember(id){
@@ -325,12 +346,13 @@ export default function MemberTable(){
 
       <div className="glass-card rounded-2xl md:rounded-3xl overflow-hidden">
         <div className="overflow-x-auto w-full">
-          <table className="w-full text-left min-w-[600px]">
+          <table className="w-full text-left min-w-[700px]">
             <thead>
               <tr className="text-[10px] md:text-[11px] uppercase tracking-widest text-gray-500 border-b border-white/5">
                 <th className="px-4 md:px-8 py-3 md:py-5">Member</th>
                 <th className="px-4 md:px-8 py-3 md:py-5">Contact Details</th>
                 <th className="px-4 md:px-8 py-3 md:py-5">Plan Expiry</th>
+                <th className="px-4 md:px-8 py-3 md:py-5">Payment / Dues</th>
                 <th className="px-4 md:px-8 py-3 md:py-5 text-right">Actions</th>
               </tr>
             </thead>
@@ -356,6 +378,25 @@ export default function MemberTable(){
                         <span className={`text-[9px] md:text-[10px] font-bold uppercase mt-1 ${isActive ? 'text-emerald-400' : 'text-red-400'}`}>
                           {isActive ? '● Running' : '○ Expired'}
                         </span>
+                      </div>
+                    </td>
+                    <td className="px-4 md:px-8 py-3 md:py-5">
+                      <div className="flex flex-col items-start gap-1">
+                        <div className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase border ${
+                          m.paymentStatus === 'pending' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 
+                          'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                        }`}>
+                          {m.paymentStatus || 'pending'}
+                        </div>
+                        {m.paymentStatus === 'pending' && (
+                          <button 
+                            disabled={remindingId === m._id}
+                            onClick={() => sendReminder(m._id)}
+                            className="mt-1 flex flex-row items-center gap-1.5 px-2 py-1 text-[10px] font-bold uppercase bg-amber-500 hover:bg-amber-400 text-gray-900 rounded-md transition-colors disabled:opacity-50"
+                          >
+                            <span>{remindingId === m._id ? 'Sending...' : '🔔 Remind'}</span>
+                          </button>
+                        )}
                       </div>
                     </td>
                     <td className="px-4 md:px-8 py-3 md:py-5 text-right">

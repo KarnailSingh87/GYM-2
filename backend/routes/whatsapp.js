@@ -200,4 +200,23 @@ router.post('/test-message', requireAuth, async (req, res) => {
   }
 });
 
+router.post('/remind-payment/:id', requireAuth, async (req, res) => {
+  try {
+    const member = await Member.findById(req.params.id);
+    if (!member) return res.status(404).json({ success: false, message: 'Member not found' });
+    if (!member.phone) return res.status(400).json({ success: false, message: 'Member has no phone number' });
+    
+    // We can assume `member.amountReceived` holds pending or we just say the fee is pending.
+    // If they have a separate expected amount we can pass it.
+    await import('../utils/whatsappBot.js').then((bot) => 
+      bot.sendPaymentReminder(member.phone, { name: member.name, amount: null })
+    ).catch(e => console.error("Reminder err", e));
+    
+    res.json({ success: true, message: 'Payment reminder sent via WhatsApp!' });
+  } catch(err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Failed to send reminder' });
+  }
+});
+
 export default router;

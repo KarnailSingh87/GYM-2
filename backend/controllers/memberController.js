@@ -1,5 +1,5 @@
 import Member from '../models/Member.js';
-import { sendWelcome } from '../utils/whatsappBot.js';
+import { sendWelcome, sendPaymentReceipt } from '../utils/whatsappBot.js';
 
 export async function createMember(req, res){
   try{
@@ -63,7 +63,21 @@ export async function updateMember(req, res){
   try{
     const { id } = req.params;
     const updates = req.body;
+    
+    // Check old member
+    const oldMember = await Member.findById(id);
+
     const member = await Member.findByIdAndUpdate(id, updates, { new: true });
+    
+    if (oldMember && oldMember.paymentStatus === 'pending' && updates.paymentStatus && updates.paymentStatus !== 'pending' && member.phone) {
+      await sendPaymentReceipt(member.phone, {
+        name: member.name,
+        amountReceived: updates.amountReceived || member.amountReceived,
+        paymentMethod: updates.paymentStatus,
+        expiryDate: member.expiryDate
+      }).catch(err => console.error('Receipt send failed', err));
+    }
+    
     res.json({ member });
   } catch(err){
     res.status(500).json({ message: 'Server error' });
