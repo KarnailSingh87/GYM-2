@@ -4,7 +4,6 @@ import { getWhatsAppStatus, logoutWhatsApp, initWhatsApp, sendText, requestPairi
 import Member from '../models/Member.js';
 import WALog from '../models/WALog.js';
 import WAConfig from '../models/WAConfig.js';
-import { verifyBusinessApi } from '../utils/whatsappBusinessApi.js';
 
 const router = express.Router();
 
@@ -28,14 +27,13 @@ router.get('/config', requireAuth, async (req, res) => {
 
 router.post('/config', requireAuth, async (req, res) => {
   try {
-    const { connectionMethod, pairingPhone, businessApi } = req.body;
+    const { connectionMethod, pairingPhone } = req.body;
 
     await WAConfig.findOneAndUpdate(
       { id: 'primary' },
       {
         connectionMethod,
         pairingPhone,
-        businessApi,
       },
       { upsert: true, new: true }
     );
@@ -47,29 +45,6 @@ router.post('/config', requireAuth, async (req, res) => {
   } catch (err) {
     console.error('Config update error:', err);
     res.status(500).json({ success: false, message: 'Failed to update configuration.' });
-  }
-});
-
-router.post('/verify-business', requireAuth, async (req, res) => {
-  try {
-    const { accessToken, phoneNumberId } = req.body;
-    const result = await verifyBusinessApi(accessToken, phoneNumberId);
-
-    if (result.success) {
-      await WAConfig.findOneAndUpdate(
-        { id: 'primary' },
-        {
-          'businessApi.accessToken': accessToken,
-          'businessApi.phoneNumberId': phoneNumberId,
-          'businessApi.verified': true
-        },
-        { upsert: true }
-      );
-    }
-
-    res.json(result);
-  } catch (err) {
-    res.status(500).json({ success: false, message: 'Verification failed due to server error.' });
   }
 });
 

@@ -12,8 +12,6 @@ import P from 'pino';
 import qrcode from 'qrcode-terminal';
 import WAState from '../models/WAState.js';
 import WALog from '../models/WALog.js';
-import WAConfig from '../models/WAConfig.js';
-import { sendBusinessApiMessage } from './whatsappBusinessApi.js';
 
 // ─────────────────────────────────────────────
 //  Helpers
@@ -327,13 +325,6 @@ function formatPhoneForBaileys(phone) {
 export async function sendText(phone, text) {
   console.log(`📤 [WA] Sending to ${phone}…`);
   try {
-    // Route via Business API if configured
-    const config = await WAConfig.findOne({ id: 'primary' });
-    if (config?.connectionMethod === 'business_api') {
-      console.log('[WA] Routing via Business API…');
-      return await sendBusinessApiMessage(phone, text);
-    }
-
     // If not connected, trigger init and wait up to 45 s
     if (!sock?.user) {
       console.log('[WA] Not connected — initializing…');

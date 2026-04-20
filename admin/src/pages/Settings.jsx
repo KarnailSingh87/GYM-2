@@ -14,7 +14,6 @@ export default function Settings() {
   // Config State
   const [activeMethod, setActiveMethod] = useState('qr');
   const [pairingPhone, setPairingPhone] = useState('');
-  const [businessApi, setBusinessApi] = useState({ accessToken: '', phoneNumberId: '' });
   const [saveLoading, setSaveLoading] = useState(false);
   const [hasInitialized, setHasInitialized] = useState(false);
 
@@ -37,7 +36,6 @@ export default function Settings() {
       if (data.config && !hasInitialized) {
         setActiveMethod(data.config.connectionMethod);
         setPairingPhone(data.config.pairingPhone || '');
-        setBusinessApi(data.config.businessApi || { accessToken: '', phoneNumberId: '' });
         setHasInitialized(true);
       }
     } catch (err) {
@@ -82,8 +80,7 @@ export default function Settings() {
         },
         body: JSON.stringify({
           connectionMethod: method,
-          pairingPhone: pairingPhone,
-          businessApi: businessApi
+          pairingPhone: pairingPhone
         })
       });
       const data = await res.json();
@@ -114,8 +111,7 @@ export default function Settings() {
         },
         body: JSON.stringify({
           connectionMethod: 'pairing',
-          pairingPhone: pairingPhone,
-          businessApi: businessApi
+          pairingPhone: pairingPhone
         })
       });
 
@@ -138,32 +134,6 @@ export default function Settings() {
     } catch (err) {
       console.error(err);
       alert('Error requesting pairing code.');
-    } finally {
-      setSaveLoading(false);
-    }
-  }
-
-  async function handleVerifyBusiness() {
-    setSaveLoading(true);
-    try {
-      const res = await fetch(`${apiUrl}/whatsapp/verify-business`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(businessApi)
-      });
-      const data = await res.json();
-      if (data.success) {
-        alert('Success: ' + data.message);
-        fetchStatus();
-      } else {
-        alert('Verification Failed: ' + data.message);
-      }
-    } catch (err) {
-      console.error(err);
-      alert('Error verifying API credentials.');
     } finally {
       setSaveLoading(false);
     }
@@ -233,7 +203,7 @@ export default function Settings() {
     }
   }
 
-  const isConnected = status?.connected || (status?.config?.connectionMethod === 'business_api' && status?.config?.businessApi?.verified);
+  const isConnected = status?.connected;
 
   return (
     <div className="space-y-6 md:space-y-8 animate-in fade-in duration-500 pb-10">
@@ -267,13 +237,13 @@ export default function Settings() {
 
             {/* Method Tabs */}
             <div className="flex p-1 bg-black/40 rounded-xl border border-white/5">
-              {['qr', 'pairing', 'business_api'].map((method) => (
+              {['qr', 'pairing'].map((method) => (
                 <button
                   key={method}
                   onClick={() => setActiveMethod(method)}
                   className={`flex-1 py-2 text-[10px] md:text-xs font-bold rounded-lg transition-all ${activeMethod === method ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/20' : 'text-gray-500 hover:text-gray-300'}`}
                 >
-                  {method === 'business_api' ? 'API KEY' : method.toUpperCase()}
+                  {method.toUpperCase()}
                 </button>
               ))}
             </div>
@@ -294,7 +264,7 @@ export default function Settings() {
                       <p className="text-gray-400 text-[10px] uppercase text-center font-bold">Linked Devices &gt; Link a Device</p>
                     </div>
                   ) : isConnected ? (
-                    <ConnectedProfile activeMethod={activeMethod} status={status} />
+                    <ConnectedProfile status={status} />
                   ) : (
                     <div className="py-20 text-center text-gray-500 italic">Initializing QR Engine...</div>
                   )}
@@ -317,7 +287,7 @@ export default function Settings() {
                       </div>
                     </div>
                   ) : isConnected ? (
-                    <ConnectedProfile activeMethod={activeMethod} status={status} />
+                    <ConnectedProfile status={status} />
                   ) : (
                     <div className="space-y-4">
                       <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Pairing Phone Number (with Country Code)</label>
@@ -339,47 +309,6 @@ export default function Settings() {
                 </div>
               )}
 
-              {activeMethod === 'business_api' && (
-                <div className="space-y-4">
-                  <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl text-[10px] text-amber-200">
-                    <span className="font-bold">NOTE:</span> Official API is ultra-stable but requires approval via Facebook Business Manager.
-                  </div>
-                  <div className="space-y-3">
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Permanent Access Token</label>
-                      <input
-                        type="password"
-                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-cyan-500/50 text-xs"
-                        value={businessApi.accessToken}
-                        onChange={(e) => setBusinessApi({ ...businessApi, accessToken: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Phone Number ID</label>
-                      <input
-                        placeholder="e.g. 10982347589..."
-                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-cyan-500/50 text-xs"
-                        value={businessApi.phoneNumberId}
-                        onChange={(e) => setBusinessApi({ ...businessApi, phoneNumberId: e.target.value })}
-                      />
-                    </div>
-                    <div className="flex gap-2 pt-2">
-                      <button
-                        onClick={() => handleSaveConfig('business_api')}
-                        className="flex-1 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-xl font-bold text-xs"
-                      >
-                        Save Settings
-                      </button>
-                      <button
-                        onClick={handleVerifyBusiness}
-                        className="flex-1 py-3 bg-emerald-500 text-white rounded-xl font-bold text-xs shadow-lg shadow-emerald-500/20"
-                      >
-                        Verify & Link
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* Common Utils (Logs, Test) */}
@@ -438,9 +367,9 @@ export default function Settings() {
   );
 }
 
-function ConnectedProfile({ activeMethod, status }) {
-  const name = activeMethod === 'business_api' ? 'Official API Gateway' : status?.user?.name || 'Linked Device';
-  const phone = activeMethod === 'business_api' ? 'Verified Account' : `+${status?.user?.id.split(':')[0]}`;
+function ConnectedProfile({ status }) {
+  const name = status?.user?.name || 'Linked Device';
+  const phone = `+${status?.user?.id.split(':')[0]}`;
 
   return (
     <div className="p-4 md:p-6 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl space-y-4 shadow-inner animate-in zoom-in-95">
