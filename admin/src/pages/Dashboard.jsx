@@ -12,7 +12,7 @@ function Dashboard(){
   const host = window.location.hostname;
   const apiUrl = import.meta.env.DEV 
     ? `http://${host}:5005/api` 
-    : import.meta.env.VITE_API_URL;
+    : import.meta.env.VITE_API_URL || 'https://gym-2-1xb9.onrender.com/api';
 
   useEffect(()=>{
     if(!token) return
