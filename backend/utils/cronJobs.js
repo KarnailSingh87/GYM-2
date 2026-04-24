@@ -116,9 +116,9 @@ export function startCronJobs() {
   //  WhatsApp Health Watchdog — every 2 minutes
   //  Detects zombie/stuck sockets and forces restart
   // ─────────────────────────────────────────────
-  cron.schedule('*/2 * * * *', () => {
+  cron.schedule('*/2 * * * *', async () => {
     try {
-      runWatchdog();
+      await runWatchdog();
     } catch (e) {
       console.error('❌ [Watchdog] Error:', e.message);
     }
@@ -131,23 +131,32 @@ export function startCronJobs() {
   // ─────────────────────────────────────────────
   cron.schedule('*/8 * * * *', async () => {
     try {
-      const selfUrl = (
-        process.env.RENDER_EXTERNAL_URL ||
-        process.env.BACKEND_URL ||
-        `http://localhost:${process.env.PORT || 5005}`
-      ).replace(/\/$/, '');
+      // 1. Prioritize RENDER_EXTERNAL_URL (automatic on Render)
+      // 2. Fallback to BACKEND_URL
+      // 3. Fallback to localhost (only for local dev)
+      let selfUrl = process.env.RENDER_EXTERNAL_URL || process.env.BACKEND_URL;
+      
+      if (!selfUrl) {
+        selfUrl = `http://localhost:${process.env.PORT || 5005}`;
+      }
+      
+      selfUrl = selfUrl.replace(/\/$/, '');
+
+      console.log(`📡 [Keep-Alive] Pinging self at ${selfUrl}/api/ping…`);
 
       const response = await fetch(`${selfUrl}/api/ping`, {
-        signal: AbortSignal.timeout(10_000) // 10-second hard timeout
-      }).catch(() => null);
+        signal: AbortSignal.timeout(15_000) // 15-second hard timeout
+      }).catch(err => {
+        return { ok: false, statusText: err.message };
+      });
 
       if (response?.ok) {
-        console.log(`✅ [Keep-Alive] Pinged ${selfUrl} — server awake.`);
+        console.log(`✅ [Keep-Alive] SUCCESS — server is awake.`);
       } else {
-        console.warn(`⚠️ [Keep-Alive] Ping to ${selfUrl} failed or non-OK.`);
+        console.warn(`⚠️ [Keep-Alive] FAILED (${response?.statusText}) — server might sleep soon.`);
       }
     } catch (e) {
-      console.error('❌ [Keep-Alive] Error:', e.message);
+      console.error('❌ [Keep-Alive] Critical Error:', e.message);
     }
   });
 

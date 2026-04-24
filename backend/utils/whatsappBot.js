@@ -244,9 +244,18 @@ export async function initWhatsApp(sessionId = SESSION_ID, force = false) {
           scheduleReconnect(sessionId);
         } else {
           // Logged out — stop reconnecting until user scans QR again
-          waState = { status: 'DISCONNECTED', qr: null, user: null };
-          reconnectAttempts = 0;
-          console.log('🚪 [WA] Logged out from WhatsApp. Scan QR to reconnect.');
+          // BUG FIX: Sometimes Baileys reports 'loggedOut' (401) due to stale keys on ephemeral storage (Render).
+          // If this happens, we try ONE forced restart to see if we can restore from the cloud (MongoDB)
+          // before completely giving up.
+          if (reconnectAttempts < 3) {
+             console.warn('🚪 [WA] Logged out detected. Attempting ONE clean restart to check cloud session persistence…');
+             reconnectAttempts++;
+             setTimeout(() => initWhatsApp(sessionId, true), 5000); 
+          } else {
+            waState = { status: 'DISCONNECTED', qr: null, user: null };
+            reconnectAttempts = 0;
+            console.log('🚪 [WA] Logged out from WhatsApp. Scan QR to reconnect.');
+          }
         }
       }
 
@@ -421,18 +430,46 @@ export async function requestPairingCodeManual(phone) {
   }
 }
 
-// ─────────────────────────────────────────────
-//  Public: watchdog — called by cronJobs.js
-//  Returns true if it triggered a restart
-// ─────────────────────────────────────────────
-export function runWatchdog() {
+/**
+ * Public: watchdog — called by cronJobs.js
+ * Returns true if it triggered a restart
+ */
+export async function runWatchdog() {
   const status = getWhatsAppStatus();
   console.log(`🔍 [Watchdog] Status: ${status.status} | Connected: ${status.connected}`);
 
-  // Already connected — nothing to do
-  if (status.connected) return false;
+  // ── Case 1: Already connected ──
+  if (status.connected && sock) {
+    // Perform a real health-check ping to WhatsApp servers every few minutes via the watchdog
+    try {
+      // Small query to verify the socket is actually "alive" and not a zombie
+      // We use a timeout to avoid hanging the watchdog
+      const pingPromise = sock.query({
+        tag: 'iq',
+        attrs: {
+          type: 'get',
+          xmlns: 'w:p',
+          to: '@s.whatsapp.net',
+        },
+        content: [{ tag: 'ping', attrs: {} }]
+      });
 
-  // Stuck in INITIALIZING for > 3 minutes → force restart
+      // If ping doesn't respond in 15s, it's a zombie
+      await Promise.race([
+        pingPromise,
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Ping Timeout')), 15000))
+      ]);
+      
+      console.log('✅ [Watchdog] Health-check: Socket is alive.');
+      return false;
+    } catch (err) {
+      console.warn(`⚠️ [Watchdog] Health-check FAILED: ${err.message}. Forcing restart.`);
+      initWhatsApp(SESSION_ID, true).catch(e => console.error('[Watchdog] Restart error:', e));
+      return true;
+    }
+  }
+
+  // ── Case 2: Stuck in INITIALIZING for > 3 minutes ──
   if (status.status === 'INITIALIZING' && initStartedAt) {
     const stuckMs = Date.now() - initStartedAt;
     if (stuckMs > 3 * 60 * 1000) {
@@ -443,7 +480,7 @@ export function runWatchdog() {
     return false; // Still within grace period
   }
 
-  // Disconnected and no reconnect timer running → kick-start reconnection
+  // ── Case 3: Disconnected and no reconnect timer running ──
   if ((status.status === 'DISCONNECTED' || status.status === 'RECONNECTING') && !reconnectTimer && !isInitializing) {
     console.warn(`⚠️ [Watchdog] Dead socket detected (${status.status}) with no pending reconnect — restarting.`);
     initWhatsApp(SESSION_ID).catch(err => console.error('[Watchdog] Reconnect error:', err));
