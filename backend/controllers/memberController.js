@@ -66,10 +66,27 @@ export async function updateMember(req, res){
     
     // Check old member
     const oldMember = await Member.findById(id);
+    if (!oldMember) return res.status(404).json({ message: 'Member not found' });
+
+    // Recalculate expiryDate when membershipType or joinDate changes
+    const newMembershipType = updates.membershipType || oldMember.membershipType;
+    const newJoinDate = updates.joinDate ? new Date(updates.joinDate) : oldMember.joinDate;
+    
+    if (updates.membershipType || updates.joinDate) {
+      let expiry = new Date(newJoinDate);
+      if (isNaN(expiry.getTime())) expiry = new Date(oldMember.joinDate);
+      
+      if (newMembershipType === 'monthly') expiry.setMonth(expiry.getMonth() + 1);
+      else if (newMembershipType === 'quarterly') expiry.setMonth(expiry.getMonth() + 3);
+      else if (newMembershipType === 'sixmonth') expiry.setMonth(expiry.getMonth() + 6);
+      else if (newMembershipType === 'yearly') expiry.setFullYear(expiry.getFullYear() + 1);
+      
+      updates.expiryDate = expiry;
+    }
 
     const member = await Member.findByIdAndUpdate(id, updates, { new: true });
     
-    if (oldMember && oldMember.paymentStatus === 'pending' && updates.paymentStatus && updates.paymentStatus !== 'pending' && member.phone) {
+    if (oldMember.paymentStatus === 'pending' && updates.paymentStatus && updates.paymentStatus !== 'pending' && member.phone) {
       await sendPaymentReceipt(member.phone, {
         name: member.name,
         amountReceived: updates.amountReceived || member.amountReceived,
@@ -80,6 +97,7 @@ export async function updateMember(req, res){
     
     res.json({ member });
   } catch(err){
+    console.error(err);
     res.status(500).json({ message: 'Server error' });
   }
 }
@@ -87,7 +105,8 @@ export async function updateMember(req, res){
 export async function deleteMember(req, res){
   try{
     const { id } = req.params;
-    await Member.findByIdAndDelete(id);
+    const member = await Member.findByIdAndDelete(id);
+    if (!member) return res.status(404).json({ message: 'Member not found' });
     res.json({ ok: true });
   } catch(err){
     res.status(500).json({ message: 'Server error' });

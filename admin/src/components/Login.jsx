@@ -13,7 +13,8 @@ export default function Login(){
     setError(null)
     setLoading(true)
     try{
-      const apiUrl = import.meta.env.DEV ? 'http://localhost:5005/api' : import.meta.env.VITE_API_URL || 'https://gym-2-1xb9.onrender.com/api';
+      const host = window.location.hostname;
+      const apiUrl = import.meta.env.DEV ? `http://${host}:5005/api` : import.meta.env.VITE_API_URL || 'https://gym-2-1xb9.onrender.com/api';
       const res = await fetch(`${apiUrl}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

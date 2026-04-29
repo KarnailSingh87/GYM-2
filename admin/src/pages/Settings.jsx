@@ -17,9 +17,10 @@ export default function Settings() {
   const [saveLoading, setSaveLoading] = useState(false);
   const [hasInitialized, setHasInitialized] = useState(false);
 
-  const apiUrl = (import.meta.env.VITE_API_URL ||
-    import.meta.env.VITE_LOCAL_API_URL ||
-    `http://localhost:5005/api`).replace(/\/$/, "");
+  const host = window.location.hostname;
+  const apiUrl = import.meta.env.DEV 
+    ? `http://${host}:5005/api` 
+    : import.meta.env.VITE_API_URL || 'https://gym-2-1xb9.onrender.com/api';
 
   async function fetchStatus() {
     try {
@@ -369,7 +370,7 @@ export default function Settings() {
 
 function ConnectedProfile({ status }) {
   const name = status?.user?.name || 'Linked Device';
-  const phone = `+${status?.user?.id.split(':')[0]}`;
+  const phone = status?.user?.id ? `+${status.user.id.split(':')[0]}` : 'Unknown';
 
   return (
     <div className="p-4 md:p-6 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl space-y-4 shadow-inner animate-in zoom-in-95">

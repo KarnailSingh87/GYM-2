@@ -369,7 +369,7 @@ export async function sendText(phone, text) {
 // ─────────────────────────────────────────────
 //  Public: send welcome message on member registration
 // ─────────────────────────────────────────────
-export async function sendWelcome(phone, { name, joinDate, expiryDate, timeSlot, paymentStatus, amountReceived, address }) {
+export async function sendWelcome(phone, { name, joinDate, expiryDate, timeSlot, paymentStatus, amountReceived, address, customMessage }) {
   const start = new Date(joinDate).toLocaleDateString('en-IN');
   const end   = new Date(expiryDate).toLocaleDateString('en-IN');
 
@@ -378,7 +378,9 @@ export async function sendWelcome(phone, { name, joinDate, expiryDate, timeSlot,
   else if (paymentStatus === 'cash') paymentText = 'Cash Payment Received ✅';
   else paymentText = 'Payment Pending ⌛';
 
-  const text = `🔥 *WELCOME TO RFC GYM* 🔥\n\nHello *${name}*,\n\nWelcome to the family! Your registration is complete. Here are your details:\n\n*Address:* ${address || 'Not Provided'}\n*Joining Date:* ${start}\n*Expiry Date:* ${end}\n*Time Slot:* ${timeSlot || 'Anytime'}\n*Payment Status:* ${paymentText}\n\nWe are excited to see you crush your goals at *RFC Gym*! 💪\n\n_Stay Fit, Stay Strong!_`;
+  const customNote = customMessage ? `\n\n📝 *Note from RFC Gym:* ${customMessage}` : '';
+
+  const text = `🔥 *WELCOME TO RFC GYM* 🔥\n\nHello *${name}*,\n\nWelcome to the family! Your registration is complete. Here are your details:\n\n*Address:* ${address || 'Not Provided'}\n*Joining Date:* ${start}\n*Expiry Date:* ${end}\n*Time Slot:* ${timeSlot || 'Anytime'}\n*Payment Status:* ${paymentText}${customNote}\n\nWe are excited to see you crush your goals at *RFC Gym*! 💪\n\n_Stay Fit, Stay Strong!_`;
   return sendText(phone, text);
 }
 
