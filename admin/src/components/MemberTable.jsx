@@ -49,7 +49,7 @@ function EditMemberModal({ member, onClose, onSuccess, token, apiUrl }) {
 
   React.useEffect(() => {
     const formatTime = (t) => {
-      if(!t) return ''
+      if (!t) return ''
       const [h, m] = t.split(':')
       const hour = parseInt(h)
       const ampm = hour >= 12 ? 'PM' : 'AM'
@@ -60,7 +60,7 @@ function EditMemberModal({ member, onClose, onSuccess, token, apiUrl }) {
   }, [startTime, endTime])
 
   const durationExceeded = () => {
-    if(!startTime || !endTime) return false
+    if (!startTime || !endTime) return false
     const [h1, m1] = startTime.split(':').map(Number)
     const [h2, m2] = endTime.split(':').map(Number)
     const diff = (h2 * 60 + m2) - (h1 * 60 + m1)
@@ -69,7 +69,7 @@ function EditMemberModal({ member, onClose, onSuccess, token, apiUrl }) {
 
   async function submit(e) {
     e.preventDefault()
-    if(durationExceeded()){
+    if (durationExceeded()) {
       setMessage({ text: 'Duration cannot exceed 2 hours.', type: 'error' })
       return
     }
@@ -78,7 +78,7 @@ function EditMemberModal({ member, onClose, onSuccess, token, apiUrl }) {
       const res = await fetch(`${apiUrl}/members/${member._id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           name, phone, address, joinDate, timeSlot, membershipType, paymentStatus, amountReceived: Number(amountReceived) || 0
         })
       })
@@ -87,7 +87,7 @@ function EditMemberModal({ member, onClose, onSuccess, token, apiUrl }) {
         window.location.reload();
         return;
       }
-      if(res.ok) {
+      if (res.ok) {
         onSuccess()
       } else {
         const data = await res.json()
@@ -112,30 +112,30 @@ function EditMemberModal({ member, onClose, onSuccess, token, apiUrl }) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             <div className="space-y-1.5 md:space-y-2">
               <label className="text-[10px] md:text-xs font-semibold text-gray-500 uppercase tracking-widest ml-1">Full Name</label>
-              <input className="w-full bg-white/5 border border-white/10 rounded-lg md:rounded-xl px-3 md:px-4 py-2.5 md:py-3 text-sm" value={name} onChange={e=>setName(e.target.value)} required />
+              <input className="w-full bg-white/5 border border-white/10 rounded-lg md:rounded-xl px-3 md:px-4 py-2.5 md:py-3 text-sm" value={name} onChange={e => setName(e.target.value)} required />
             </div>
             <div className="space-y-1.5 md:space-y-2">
               <label className="text-[10px] md:text-xs font-semibold text-gray-500 uppercase tracking-widest ml-1">Phone Number</label>
-              <input className="w-full bg-white/5 border border-white/10 rounded-lg md:rounded-xl px-3 md:px-4 py-2.5 md:py-3 text-sm" value={phone} onChange={e=>setPhone(e.target.value)} required />
+              <input className="w-full bg-white/5 border border-white/10 rounded-lg md:rounded-xl px-3 md:px-4 py-2.5 md:py-3 text-sm" value={phone} onChange={e => setPhone(e.target.value)} required />
             </div>
             <div className="space-y-1.5 md:space-y-2">
               <label className="text-[10px] md:text-xs font-semibold text-gray-500 uppercase tracking-widest ml-1">Address</label>
-              <input className="w-full bg-white/5 border border-white/10 rounded-lg md:rounded-xl px-3 md:px-4 py-2.5 md:py-3 text-sm" value={address} onChange={e=>setAddress(e.target.value)} />
+              <input className="w-full bg-white/5 border border-white/10 rounded-lg md:rounded-xl px-3 md:px-4 py-2.5 md:py-3 text-sm" value={address} onChange={e => setAddress(e.target.value)} />
             </div>
             <div className="space-y-1.5 md:space-y-2">
               <label className="text-[10px] md:text-xs font-semibold text-gray-500 uppercase tracking-widest ml-1">Joining Date</label>
-              <input type="date" className="w-full bg-white/5 border border-white/10 rounded-lg md:rounded-xl px-3 md:px-4 py-2.5 md:py-3 text-sm" value={joinDate} onChange={e=>setJoinDate(e.target.value)} />
+              <input type="date" className="w-full bg-white/5 border border-white/10 rounded-lg md:rounded-xl px-3 md:px-4 py-2.5 md:py-3 text-sm" value={joinDate} onChange={e => setJoinDate(e.target.value)} />
             </div>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             <div className="space-y-1.5 md:space-y-2">
               <label className="text-[10px] md:text-xs font-semibold text-gray-500 uppercase tracking-widest ml-1">Start Time</label>
-              <input type="time" className="w-full bg-white/5 border border-white/10 rounded-lg md:rounded-xl px-3 md:px-4 py-2.5 md:py-3 text-sm text-center" value={startTime} onChange={e=>setStartTime(e.target.value)} />
+              <input type="time" className="w-full bg-white/5 border border-white/10 rounded-lg md:rounded-xl px-3 md:px-4 py-2.5 md:py-3 text-sm text-center" value={startTime} onChange={e => setStartTime(e.target.value)} />
             </div>
             <div className="space-y-1.5 md:space-y-2">
               <label className="text-[10px] md:text-xs font-semibold text-gray-500 uppercase tracking-widest ml-1">End Time</label>
-              <input type="time" className="w-full bg-white/5 border border-white/10 rounded-lg md:rounded-xl px-3 md:px-4 py-2.5 md:py-3 text-sm text-center" value={endTime} onChange={e=>setEndTime(e.target.value)} />
+              <input type="time" className="w-full bg-white/5 border border-white/10 rounded-lg md:rounded-xl px-3 md:px-4 py-2.5 md:py-3 text-sm text-center" value={endTime} onChange={e => setEndTime(e.target.value)} />
               {durationExceeded() && <div className="text-red-400 text-xs mt-1">Duration cannot exceed 2 hours</div>}
             </div>
           </div>
@@ -144,7 +144,7 @@ function EditMemberModal({ member, onClose, onSuccess, token, apiUrl }) {
             <label className="text-[10px] md:text-xs font-semibold text-gray-500 uppercase tracking-widest ml-1">Membership Plan</label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 md:gap-4">
               {plans.map(p => (
-                <button type="button" key={p.value} onClick={()=>setMembershipType(p.value)} className={`p-3 md:p-4 rounded-lg md:rounded-xl border text-sm ${membershipType === p.value ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-400 font-bold' : 'bg-white/5 border-white/10 text-gray-400'}`}>
+                <button type="button" key={p.value} onClick={() => setMembershipType(p.value)} className={`p-3 md:p-4 rounded-lg md:rounded-xl border text-sm ${membershipType === p.value ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-400 font-bold' : 'bg-white/5 border-white/10 text-gray-400'}`}>
                   {p.label}
                 </button>
               ))}
@@ -155,7 +155,7 @@ function EditMemberModal({ member, onClose, onSuccess, token, apiUrl }) {
             <label className="text-[10px] md:text-xs font-semibold text-gray-500 uppercase tracking-widest ml-1">Payment Method</label>
             <div className="grid grid-cols-3 gap-2 md:gap-4">
               {paymentOptions.map(p => (
-                <button type="button" key={p.value} onClick={()=>setPaymentStatus(p.value)} className={`p-3 md:p-4 rounded-lg md:rounded-xl border text-sm ${paymentStatus === p.value ? (p.value === 'pending' ? 'bg-amber-500/20 border-amber-500/50 text-amber-400 font-bold' : 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400 font-bold') : 'bg-white/5 border-white/10 text-gray-400'}`}>
+                <button type="button" key={p.value} onClick={() => setPaymentStatus(p.value)} className={`p-3 md:p-4 rounded-lg md:rounded-xl border text-sm ${paymentStatus === p.value ? (p.value === 'pending' ? 'bg-amber-500/20 border-amber-500/50 text-amber-400 font-bold' : 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400 font-bold') : 'bg-white/5 border-white/10 text-gray-400'}`}>
                   {p.label}
                 </button>
               ))}
@@ -163,7 +163,7 @@ function EditMemberModal({ member, onClose, onSuccess, token, apiUrl }) {
             {paymentStatus !== 'pending' && (
               <div className="pt-2">
                 <label className="text-[10px] md:text-xs font-semibold text-gray-500 uppercase tracking-widest ml-1">Amount Received (₹)</label>
-                <input type="number" className="w-full mt-1.5 bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm" value={amountReceived} onChange={e=>setAmountReceived(e.target.value)} />
+                <input type="number" className="w-full mt-1.5 bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm" value={amountReceived} onChange={e => setAmountReceived(e.target.value)} />
               </div>
             )}
           </div>
@@ -178,7 +178,7 @@ function EditMemberModal({ member, onClose, onSuccess, token, apiUrl }) {
   )
 }
 
-export default function MemberTable(){
+export default function MemberTable() {
   const { token } = useContext(AuthContext)
   const [members, setMembers] = useState([])
   const [loading, setLoading] = useState(false)
@@ -188,12 +188,12 @@ export default function MemberTable(){
   const [waConnected, setWaConnected] = useState(false)
 
   const host = window.location.hostname;
-  const apiUrl = import.meta.env.DEV 
-    ? `http://${host}:5005/api` 
+  const apiUrl = import.meta.env.DEV
+    ? `http://${host}:5005/api`
     : import.meta.env.VITE_API_URL || 'https://gym-2-1xb9.onrender.com/api';
 
-  async function fetchMembers(){
-    if(!token) return
+  async function fetchMembers() {
+    if (!token) return
     setLoading(true)
     try {
       const res = await fetch(`${apiUrl}/members`, { headers: { Authorization: `Bearer ${token}` } })
@@ -211,7 +211,7 @@ export default function MemberTable(){
     }
   }
 
-  useEffect(()=>{
+  useEffect(() => {
     fetchMembers()
     // Fetch WhatsApp status
     if (token) {
@@ -222,8 +222,8 @@ export default function MemberTable(){
     }
   }, [token])
 
-  async function removeMember(id){
-    if(!window.confirm('Delete this member?')) return
+  async function removeMember(id) {
+    if (!window.confirm('Delete this member?')) return
     const res = await fetch(`${apiUrl}/members/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } })
     if (res.status === 401) {
       localStorage.removeItem('admin_token');
@@ -253,9 +253,9 @@ export default function MemberTable(){
     }
   }
 
-  function editMember(id){
+  function editMember(id) {
     const mem = members.find(m => m._id === id);
-    if(mem) setEditingMember(mem);
+    if (mem) setEditingMember(mem);
   }
 
   function downloadPDF(filterType) {
@@ -273,29 +273,25 @@ export default function MemberTable(){
       filename = "RFC_Pending_Fees_Members.pdf";
     }
 
-    if(filteredMembers.length === 0) {
+    if (filteredMembers.length === 0) {
       alert(`No ${filterType} members to download.`);
       return;
     }
 
     const doc = new jsPDF();
     doc.text(title, 14, 15);
-    
-    const tableColumn = ["Name", "Phone", "Address", "Join Date", "Expiry Date", "Plan", "Payment Status"];
-    const tableRows = [];
 
-    filteredMembers.forEach(m => {
-      const row = [
-        m.name || "N/A",
-        m.phone || "N/A",
-        m.address || "N/A",
-        m.joinDate ? new Date(m.joinDate).toLocaleDateString() : "N/A",
-        m.expiryDate ? new Date(m.expiryDate).toLocaleDateString() : "N/A",
-        m.membershipType || "N/A",
-        m.paymentStatus || "pending"
-      ];
-      tableRows.push(row);
-    });
+    const tableColumn = ["S.No", "Name", "Phone", "Address", "Join Date", "Expiry Date", "Plan", "Payment Status"];
+    const tableRows = filteredMembers.map((m, idx) => [
+      idx + 1,
+      m.name || "N/A",
+      m.phone || "N/A",
+      m.address || "N/A",
+      m.joinDate ? new Date(m.joinDate).toLocaleDateString() : "N/A",
+      m.expiryDate ? new Date(m.expiryDate).toLocaleDateString() : "N/A",
+      m.membershipType || "N/A",
+      m.paymentStatus || "pending"
+    ]);
 
     autoTable(doc, {
       head: [tableColumn],
@@ -306,18 +302,18 @@ export default function MemberTable(){
     doc.save(filename);
   }
 
-  const displayedMembers = members.filter(m => 
-    (m.name || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+  const displayedMembers = members.filter(m =>
+    (m.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
     (m.phone || '').includes(searchTerm)
   );
 
-  if(loading && members.length === 0) return <div className="text-center py-20 text-gray-400">Loading directory...</div>
+  if (loading && members.length === 0) return <div className="text-center py-20 text-gray-400">Loading directory...</div>
 
   return (
     <div className="space-y-4 md:space-y-6 pb-10">
       {editingMember && (
-        <EditMemberModal 
-          member={editingMember} 
+        <EditMemberModal
+          member={editingMember}
           onClose={() => setEditingMember(null)}
           onSuccess={() => { setEditingMember(null); fetchMembers(); }}
           token={token}
@@ -330,20 +326,20 @@ export default function MemberTable(){
           <p className="text-sm md:text-base text-gray-400 mt-1">Manage and monitor all active and expired club memberships.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <input 
-            type="text" 
-            placeholder="Search by name or phone..." 
+          <input
+            type="text"
+            placeholder="Search by name or phone..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full sm:w-auto bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-sm md:text-base outline-none focus:border-cyan-500/50 focus:bg-white/[0.08]"
           />
-          <button 
+          <button
             onClick={() => downloadPDF('active')}
             className="text-xs md:text-sm font-medium text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 px-3 md:px-4 py-1.5 md:py-2 rounded-lg md:rounded-xl border border-emerald-500/20 whitespace-nowrap transition-colors"
           >
             Active PDF 📄
           </button>
-          <button 
+          <button
             onClick={() => downloadPDF('pending')}
             className="text-xs md:text-sm font-medium text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 px-3 md:px-4 py-1.5 md:py-2 rounded-lg md:rounded-xl border border-amber-500/20 whitespace-nowrap transition-colors"
           >
@@ -393,14 +389,13 @@ export default function MemberTable(){
                     </td>
                     <td className="px-4 md:px-8 py-3 md:py-5">
                       <div className="flex flex-col items-start gap-1">
-                        <div className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase border ${
-                          m.paymentStatus === 'pending' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 
-                          'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                        }`}>
+                        <div className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase border ${m.paymentStatus === 'pending' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
+                            'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                          }`}>
                           {m.paymentStatus || 'pending'}
                         </div>
                         {m.paymentStatus === 'pending' && (
-                          <button 
+                          <button
                             disabled={remindingId === m._id || !waConnected}
                             onClick={() => sendReminder(m._id)}
                             title={!waConnected ? 'WhatsApp is not connected' : 'Send payment reminder'}
@@ -413,14 +408,14 @@ export default function MemberTable(){
                     </td>
                     <td className="px-4 md:px-8 py-3 md:py-5 text-right">
                       <div className="flex justify-end space-x-1 md:space-x-2">
-                        <button 
+                        <button
                           onClick={() => setEditingMember(m)}
                           className="p-1.5 md:p-2 rounded-md md:rounded-lg bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:border-white/20 hover:bg-white/10 transition-all text-sm md:text-base"
                           title="Edit"
                         >
                           <span style={{ display: 'inline-block', transform: 'scaleX(-1)' }}>✏️</span>
                         </button>
-                        <button 
+                        <button
                           onClick={() => removeMember(m._id)}
                           className="p-2 rounded-lg bg-red-500/5 border border-red-500/10 text-red-400/60 hover:text-red-400 hover:border-red-500/30 hover:bg-red-500/10 transition-all"
                           title="Delete"
