@@ -185,11 +185,13 @@ export default function MemberTable(){
   const [editingMember, setEditingMember] = useState(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [remindingId, setRemindingId] = useState(null)
+  const [waConnected, setWaConnected] = useState(false)
 
   const host = window.location.hostname;
   const apiUrl = import.meta.env.DEV 
     ? `http://${host}:5005/api` 
     : import.meta.env.VITE_API_URL || 'https://gym-2-1xb9.onrender.com/api';
+
   async function fetchMembers(){
     if(!token) return
     setLoading(true)
@@ -209,7 +211,16 @@ export default function MemberTable(){
     }
   }
 
-  useEffect(()=>{ fetchMembers() }, [token])
+  useEffect(()=>{
+    fetchMembers()
+    // Fetch WhatsApp status
+    if (token) {
+      fetch(`${apiUrl}/whatsapp/status`, { headers: { Authorization: `Bearer ${token}` } })
+        .then(r => r.ok ? r.json() : null)
+        .then(d => { if (d) setWaConnected(!!d.connected) })
+        .catch(() => setWaConnected(false))
+    }
+  }, [token])
 
   async function removeMember(id){
     if(!window.confirm('Delete this member?')) return
@@ -390,9 +401,10 @@ export default function MemberTable(){
                         </div>
                         {m.paymentStatus === 'pending' && (
                           <button 
-                            disabled={remindingId === m._id}
+                            disabled={remindingId === m._id || !waConnected}
                             onClick={() => sendReminder(m._id)}
-                            className="mt-1 flex flex-row items-center gap-1.5 px-2 py-1 text-[10px] font-bold uppercase bg-amber-500 hover:bg-amber-400 text-gray-900 rounded-md transition-colors disabled:opacity-50"
+                            title={!waConnected ? 'WhatsApp is not connected' : 'Send payment reminder'}
+                            className={`mt-1 flex flex-row items-center gap-1.5 px-2 py-1 text-[10px] font-bold uppercase rounded-md transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${waConnected ? 'bg-amber-500 hover:bg-amber-400 text-gray-900' : 'bg-gray-600 text-gray-400'}`}
                           >
                             <span>{remindingId === m._id ? 'Sending...' : '🔔 Remind'}</span>
                           </button>
@@ -406,7 +418,7 @@ export default function MemberTable(){
                           className="p-1.5 md:p-2 rounded-md md:rounded-lg bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:border-white/20 hover:bg-white/10 transition-all text-sm md:text-base"
                           title="Edit"
                         >
-                          ✏️
+                          <span style={{ display: 'inline-block', transform: 'scaleX(-1)' }}>✏️</span>
                         </button>
                         <button 
                           onClick={() => removeMember(m._id)}
